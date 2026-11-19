@@ -41,6 +41,7 @@ export type AdminCategory = {
   description: string;
   short_description?: string;
   image_url: string;
+  icon_url?: string;
   banner_image?: string;
   banner_image_url?: string;
   banner_title?: string;
@@ -108,7 +109,104 @@ export type AdminService = {
 function resolveMediaSrc(url?: string | null): string {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("/images/") || url.startsWith("/brand/")) return url;
   return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+function CategoryIconPreview({
+  src,
+  name,
+  slug,
+  isFirst,
+}: {
+  src?: string;
+  name: string;
+  slug?: string;
+  isFirst?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  const primarySrc = src || (slug ? `/images/category-icons/${slug}.png` : "");
+  const [currentSrc, setCurrentSrc] = useState(primarySrc);
+
+  useEffect(() => {
+    setFailed(false);
+    setAttempt(0);
+    setCurrentSrc(src || (slug ? `/images/category-icons/${slug}.png` : ""));
+  }, [src, slug]);
+
+  const handleError = () => {
+    if (attempt === 0 && currentSrc && !currentSrc.startsWith("http")) {
+      setAttempt(1);
+      setCurrentSrc(`https://nammapros.com${currentSrc.startsWith("/") ? "" : "/"}${currentSrc}`);
+    } else {
+      setFailed(true);
+    }
+  };
+
+  return (
+    <div
+      className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl text-slate-600 ${
+        isFirst ? "bg-[#e3ecf2] text-[#2c5270]" : "bg-[#eeeeea]"
+      }`}
+    >
+      {currentSrc && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={currentSrc}
+          alt={name}
+          className="h-full w-full object-contain p-1.5"
+          onError={handleError}
+        />
+      ) : (
+        <CategoryGlyph name={name} />
+      )}
+    </div>
+  );
+}
+
+function ServiceThumbPreview({
+  src,
+  name,
+}: {
+  src?: string;
+  name: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [currentSrc, setCurrentSrc] = useState(src || "");
+
+  useEffect(() => {
+    setFailed(false);
+    setAttempt(0);
+    setCurrentSrc(src || "");
+  }, [src]);
+
+  const handleError = () => {
+    if (attempt === 0 && currentSrc && !currentSrc.startsWith("http")) {
+      setAttempt(1);
+      setCurrentSrc(`https://nammapros.com${currentSrc.startsWith("/") ? "" : "/"}${currentSrc}`);
+    } else {
+      setFailed(true);
+    }
+  };
+
+  return (
+    <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eeeeea] text-slate-600">
+      {currentSrc && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={currentSrc}
+          alt={name}
+          className="h-full w-full object-cover"
+          onError={handleError}
+        />
+      ) : (
+        <ServiceGlyph name={name} />
+      )}
+    </div>
+  );
 }
 
 function slugify(val: string): string {
@@ -575,15 +673,37 @@ export function AdminServicesScreen({
     [categories, activeCategorySlug]
   );
 
+  useEffect(() => {
+    if (!selectedCategory) return;
+    let canceled = false;
+    api<{ results?: AdminService[] }>(`/admin/services/?category_id=${selectedCategory.id}&page_size=500`)
+      .then((res) => {
+        if (canceled || !res?.results) return;
+        setServices((prev) => {
+          const map = new Map(prev.map((s) => [s.id, s]));
+          for (const s of res.results!) {
+            map.set(s.id, s);
+          }
+          return Array.from(map.values());
+        });
+      })
+      .catch(() => {});
+    return () => {
+      canceled = true;
+    };
+  }, [selectedCategory?.id]);
+
   const selectedService = useMemo(() => {
     if (!activeServiceSlug) return null;
     if (selectedCategory) {
+      const catId = String(selectedCategory.id);
+      const catSlug = selectedCategory.slug.toLowerCase();
       return (
         services.find(
           (s) =>
-            s.category_id === selectedCategory.id &&
+            (String(s.category_id) === catId || (s.category_slug || "").toLowerCase() === catSlug) &&
             (s.slug === activeServiceSlug || s.slug === `${selectedCategory.slug}-${activeServiceSlug}`)
-        ) ?? null
+        ) ?? services.find((s) => s.slug === activeServiceSlug) ?? null
       );
     }
     return services.find((s) => s.slug === activeServiceSlug) ?? null;
@@ -961,8 +1081,20 @@ export function AdminServicesScreen({
   const categorySubServices = useMemo(() => {
     if (!selectedCategory) return [];
     const q = search.trim().toLowerCase();
+    const catId = String(selectedCategory.id);
+    const catSlug = selectedCategory.slug.toLowerCase();
     return services
-      .filter((s) => s.category_id === selectedCategory.id)
+      .filter((s) => {
+        const sCatId = s.category_id ? String(s.category_id) : "";
+        const sCatSlug = (s.category_slug || (s as { category?: string }).category || "").toLowerCase();
+        return (
+          sCatId === catId ||
+          (sCatSlug &&
+            (sCatSlug === catSlug ||
+              (catSlug === "ac" && sCatSlug === "air-conditioning") ||
+              (catSlug === "air-conditioning" && sCatSlug === "ac")))
+        );
+      })
       .filter((s) => {
         if (statusFilter === "active" && !s.is_active) return false;
         if (statusFilter === "inactive" && s.is_active) return false;
@@ -1591,14 +1723,7 @@ export function AdminServicesScreen({
                         className="flex cursor-pointer items-center justify-between gap-4 px-5 py-3.5 transition hover:bg-[#faf9f6]"
                       >
                         <div className="flex min-w-0 items-center gap-3.5">
-                          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#eeeeea] text-slate-600">
-                            {thumb ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumb} alt={svc.name} className="h-full w-full object-cover" />
-                            ) : (
-                              <ServiceGlyph name={svc.name} />
-                            )}
-                          </div>
+                          <ServiceThumbPreview src={thumb} name={svc.name} />
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900">{svc.name}</p>
                             <p className="mt-0.5 text-xs text-slate-500 truncate">
@@ -1680,8 +1805,20 @@ export function AdminServicesScreen({
                 ) : (
                   filteredCategories.map((cat, idx) => {
                     const count =
-                      cat.sub_service_count ?? services.filter((s) => s.category_id === cat.id).length;
-                    const cardImg = resolveMediaSrc(cat.image_url);
+                      cat.sub_service_count ??
+                      services.filter((s) => {
+                        const sCatId = s.category_id ? String(s.category_id) : "";
+                        const sCatSlug = (s.category_slug || (s as { category?: string }).category || "").toLowerCase();
+                        const cSlug = cat.slug.toLowerCase();
+                        return (
+                          sCatId === String(cat.id) ||
+                          (sCatSlug &&
+                            (sCatSlug === cSlug ||
+                              (cSlug === "ac" && sCatSlug === "air-conditioning") ||
+                              (cSlug === "air-conditioning" && sCatSlug === "ac")))
+                        );
+                      }).length;
+                    const cardImg = resolveMediaSrc(cat.icon_url || cat.image_url);
                     return (
                       <div
                         key={cat.id}
@@ -1689,18 +1826,12 @@ export function AdminServicesScreen({
                         className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 transition hover:bg-[#faf9f6]"
                       >
                         <div className="flex min-w-0 items-center gap-4">
-                          <div
-                            className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl text-slate-600 ${
-                              idx === 0 ? "bg-[#e3ecf2] text-[#2c5270]" : "bg-[#eeeeea]"
-                            }`}
-                          >
-                            {cardImg ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={cardImg} alt={cat.name} className="h-full w-full object-cover" />
-                            ) : (
-                              <CategoryGlyph name={cat.name} />
-                            )}
-                          </div>
+                          <CategoryIconPreview
+                            src={cardImg}
+                            name={cat.name}
+                            slug={cat.slug}
+                            isFirst={idx === 0}
+                          />
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-slate-900">{cat.name}</p>
                             <p className="mt-0.5 text-xs text-slate-500">
