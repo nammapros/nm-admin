@@ -108,6 +108,7 @@ export type AdminService = {
   landing_thumbnail_url?: string;
   list_image?: string;
   popup_cover_image?: string;
+  brands_image?: string | null;
   brands?: { name: string; logo_url?: string }[];
   sort_order: number;
   is_active: boolean;
@@ -1918,6 +1919,7 @@ export function AdminServicesScreen({
                         <ServiceBrandsEditor
                           serviceId={selectedService.id}
                           brands={selectedService.brands ?? []}
+                          brandsImage={selectedService.brands_image}
                           canEdit={canEdit}
                           onSaved={loadAll}
                         />
