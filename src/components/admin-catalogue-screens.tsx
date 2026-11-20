@@ -108,7 +108,6 @@ export type AdminService = {
   landing_thumbnail_url?: string;
   list_image?: string;
   popup_cover_image?: string;
-  brands_image?: string | null;
   brands?: { name: string; logo_url?: string }[];
   sort_order: number;
   is_active: boolean;
@@ -519,6 +518,117 @@ function ImageUploadSlotBox({
   );
 }
 
+function CompactImageSlot({
+  title,
+  subtitle,
+  recommendedSize,
+  imageUrl,
+  disabled,
+  uploading,
+  onUpload,
+  onClear,
+}: {
+  title: string;
+  subtitle?: string;
+  recommendedSize: string;
+  imageUrl?: string | null;
+  disabled?: boolean;
+  uploading?: boolean;
+  onUpload: (file: File) => void;
+  onClear?: () => void;
+}) {
+  const fullSrc = resolveMediaSrc(imageUrl);
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs transition-all hover:border-slate-300 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
+        {/* Small Verification Thumbnail */}
+        <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center sm:h-20 sm:w-28">
+          {fullSrc ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={fullSrc}
+                alt={title}
+                className="h-full w-full object-cover"
+              />
+              <span className="absolute bottom-1 right-1 flex items-center justify-center rounded bg-emerald-600/90 px-1 py-0.2 text-[9px] font-bold text-white shadow-2xs">
+                ✓
+              </span>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-slate-400">
+              <ImageIcon className="h-4 w-4 stroke-[1.5]" />
+              <span className="mt-0.5 text-[9px] font-medium text-slate-400">No image</span>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-xs font-bold text-slate-900 truncate">{title}</h4>
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+              {recommendedSize}
+            </span>
+          </div>
+          {subtitle && (
+            <p className="mt-0.5 text-[11px] text-slate-500 line-clamp-1">{subtitle}</p>
+          )}
+          <div className="mt-1 flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] font-semibold ${
+                fullSrc ? "text-emerald-700" : "text-amber-700"
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  fullSrc ? "bg-emerald-500" : "bg-amber-400"
+                }`}
+              />
+              {fullSrc ? "Image verified & set" : "No image uploaded"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      {!disabled && (
+        <div className="flex shrink-0 items-center gap-2 sm:self-center">
+          <label className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-100">
+            {uploading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#2c5270]" />
+            ) : (
+              <Upload className="h-3.5 w-3.5 text-slate-600" />
+            )}
+            <span>{uploading ? "Uploading..." : fullSrc ? "Change" : "Upload"}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onUpload(file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          {fullSrc && onClear && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white p-1.5 text-red-600 transition-colors hover:bg-red-50"
+              title="Remove image"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PillListEditor({
   label,
   helperText,
@@ -667,9 +777,9 @@ export function AdminServicesScreen({
   // Category View Mode: tiles (default) or list
   const [categoryViewMode, setCategoryViewMode] = useState<"tiles" | "list">("tiles");
 
-  // Service Editor active tab
+  // Service Editor active tab: simplified to 3 core tabs
   const [activeEditorTab, setActiveEditorTab] = useState<
-    "general" | "inclusions" | "description" | "faqs" | "images" | "all"
+    "general" | "images" | "details"
   >("general");
 
   // Navigation slugs
@@ -1362,13 +1472,10 @@ export function AdminServicesScreen({
                 </div>
               </div>
 
-              {/* Service Editor Navigation Tabs */}
+              {/* Service Editor Navigation Tabs: Simplified to 3 core tabs */}
               <div className="mt-3.5 flex items-center gap-1 overflow-x-auto border-b border-slate-200 pb-px scrollbar-none">
                 {[
-                  { id: "general", label: "General & Pricing", icon: Package },
-                  { id: "inclusions", label: "Scope & Inclusions", icon: CheckCircle2, count: svcForm.inclusions.length + svcForm.features.length },
-                  { id: "description", label: "Description", icon: FileText },
-                  { id: "faqs", label: "FAQs & SEO", icon: HelpCircle, count: svcForm.faqs.length },
+                  { id: "general", label: "Basic Info & Pricing", icon: Package },
                   {
                     id: "images",
                     label: "Images & Media",
@@ -1380,7 +1487,12 @@ export function AdminServicesScreen({
                       (selectedService.banner_image ? 1 : 0) +
                       selectedService.images.length,
                   },
-                  { id: "all", label: "All Sections", icon: Layers },
+                  {
+                    id: "details",
+                    label: "Inclusions & Details",
+                    icon: CheckCircle2,
+                    count: svcForm.inclusions.length + svcForm.faqs.length,
+                  },
                 ].map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeEditorTab === tab.id;
@@ -1389,7 +1501,7 @@ export function AdminServicesScreen({
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveEditorTab(tab.id as any)}
-                      className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl px-3.5 py-2 text-xs font-bold transition-all border-b-2 ${
+                      className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl px-4 py-2 text-xs font-bold transition-all border-b-2 ${
                         isActive
                           ? "border-[#2c5270] bg-white text-[#2c5270] shadow-2xs"
                           : "border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
@@ -1413,186 +1525,348 @@ export function AdminServicesScreen({
               </div>
             </div>
 
-            {/* 2-Column Responsive Workspace */}
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.95fr)] lg:items-start">
-              {/* LEFT: Tabbed Forms */}
-              <div className="space-y-5">
-                {/* 1. GENERAL & PRICING */}
-                {(activeEditorTab === "general" || activeEditorTab === "all") && (
-                  <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
-                    <div className="border-b border-[#efede8] px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-[#2c5270]" />
-                        <h2 className="text-sm font-bold text-slate-900">General Information & Pricing</h2>
+            {/* Clean, Focused Single-Column Form */}
+            <div className="mx-auto max-w-4xl space-y-5">
+              {/* TAB 1: BASIC INFO & PRICING */}
+              {activeEditorTab === "general" && (
+                <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
+                  <div className="border-b border-[#efede8] px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-[#2c5270]" />
+                      <h2 className="text-sm font-bold text-slate-900">Basic Information & Pricing</h2>
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Primary details shown in search, category listings, and checkout.
+                    </p>
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    {/* Name & Summary */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Service name *
+                        </label>
+                        <input
+                          required
+                          disabled={!canEdit}
+                          value={svcForm.name}
+                          onChange={(e) => setSvcForm({ ...svcForm, name: e.target.value })}
+                          placeholder="e.g. Split AC Deep Cleaning"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                        />
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        Primary details shown in customer search, category listings, and checkout.
-                      </p>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Customer summary / tagline
+                        </label>
+                        <input
+                          disabled={!canEdit}
+                          value={svcForm.summary}
+                          onChange={(e) => setSvcForm({ ...svcForm, summary: e.target.value })}
+                          placeholder="Short tagline shown under service title..."
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                        />
+                      </div>
                     </div>
 
-                    <div className="p-6 space-y-4">
-                      {/* Name & Summary */}
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Service name *
-                          </label>
-                          <input
-                            required
-                            disabled={!canEdit}
-                            value={svcForm.name}
-                            onChange={(e) => setSvcForm({ ...svcForm, name: e.target.value })}
-                            placeholder="e.g. Split AC Deep Cleaning"
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Customer summary
-                          </label>
-                          <input
-                            disabled={!canEdit}
-                            value={svcForm.summary}
-                            onChange={(e) => setSvcForm({ ...svcForm, summary: e.target.value })}
-                            placeholder="Short tagline shown under service title..."
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
-                          />
-                        </div>
+                    {/* Category & Slug */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Parent category *
+                        </label>
+                        <select
+                          disabled={!canEdit}
+                          value={svcForm.category_id}
+                          onChange={(e) => setSvcForm({ ...svcForm, category_id: e.target.value })}
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                        >
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-
-                      {/* Category & Slug */}
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Parent category *
-                          </label>
-                          <select
-                            disabled={!canEdit}
-                            value={svcForm.category_id}
-                            onChange={(e) => setSvcForm({ ...svcForm, category_id: e.target.value })}
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
-                          >
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            URL slug *
-                          </label>
-                          <input
-                            required
-                            disabled={!canEdit}
-                            value={svcForm.slug}
-                            onChange={(e) => setSvcForm({ ...svcForm, slug: e.target.value })}
-                            placeholder="e.g. split-ac-deep-cleaning"
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 font-mono text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
-                          />
-                        </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          URL slug *
+                        </label>
+                        <input
+                          required
+                          disabled={!canEdit}
+                          value={svcForm.slug}
+                          onChange={(e) => setSvcForm({ ...svcForm, slug: e.target.value })}
+                          placeholder="e.g. split-ac-deep-cleaning"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 font-mono text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                        />
                       </div>
+                    </div>
 
-                      {/* Pricing */}
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Starting price (₹) *
-                          </label>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">
-                              ₹
-                            </span>
-                            <input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              disabled={!canEdit}
-                              value={svcForm.price_rupees}
-                              onChange={(e) => setSvcForm({ ...svcForm, price_rupees: e.target.value })}
-                              placeholder="299"
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
-                            />
-                          </div>
-                          <p className="mt-1 text-[11px] text-slate-500">
-                            Shown as &quot;Starts from ₹...&quot; on customer cards.
-                          </p>
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Price note (optional)
-                          </label>
-                          <input
-                            type="text"
-                            disabled={!canEdit}
-                            value={svcForm.price_note}
-                            onChange={(e) => setSvcForm({ ...svcForm, price_note: e.target.value })}
-                            placeholder="e.g. Per unit / Inspection only"
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Status Toggle & Sort Order */}
-                      <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-[#efede8]">
-                        <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#faf9f6] p-3">
-                          <div>
-                            <span className="block text-xs font-bold text-slate-800">
-                              Catalogue Visibility
-                            </span>
-                            <span className="text-[11px] text-slate-500">
-                              {svcForm.is_active ? "Live & bookable by customers" : "Hidden from customer catalogue"}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={svcForm.is_active}
-                            disabled={!canEdit}
-                            onClick={() => setSvcForm({ ...svcForm, is_active: !svcForm.is_active })}
-                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              svcForm.is_active ? "bg-[#2c5270]" : "bg-slate-300"
-                            }`}
-                          >
-                            <span
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                                svcForm.is_active ? "translate-x-5" : "translate-x-0"
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Display sort order
-                          </label>
+                    {/* Pricing */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Starting price (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">
+                            ₹
+                          </span>
                           <input
                             type="number"
                             min={0}
+                            step="0.01"
                             disabled={!canEdit}
-                            value={svcForm.sort_order}
-                            onChange={(e) => setSvcForm({ ...svcForm, sort_order: e.target.value })}
-                            placeholder="0"
-                            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                            value={svcForm.price_rupees}
+                            onChange={(e) => setSvcForm({ ...svcForm, price_rupees: e.target.value })}
+                            placeholder="299"
+                            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
                           />
-                          <p className="mt-1 text-[11px] text-slate-500">Lower numbers appear first in lists.</p>
                         </div>
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          Shown as &quot;Starts from ₹...&quot; on customer cards.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Price note (optional)
+                        </label>
+                        <input
+                          type="text"
+                          disabled={!canEdit}
+                          value={svcForm.price_note}
+                          onChange={(e) => setSvcForm({ ...svcForm, price_note: e.target.value })}
+                          placeholder="e.g. Per unit / Inspection only"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                        />
                       </div>
                     </div>
-                  </section>
-                )}
 
-                {/* 2. SCOPE & INCLUSIONS */}
-                {(activeEditorTab === "inclusions" || activeEditorTab === "all") && (
+                    {/* Status Toggle & Sort Order */}
+                    <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-[#efede8]">
+                      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-[#faf9f6] p-3">
+                        <div>
+                          <span className="block text-xs font-bold text-slate-800">
+                            Catalogue Visibility
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            {svcForm.is_active ? "Live & bookable by customers" : "Hidden from customer catalogue"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={svcForm.is_active}
+                          disabled={!canEdit}
+                          onClick={() => setSvcForm({ ...svcForm, is_active: !svcForm.is_active })}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            svcForm.is_active ? "bg-[#2c5270]" : "bg-slate-300"
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                              svcForm.is_active ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-700">
+                          Display sort order
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          disabled={!canEdit}
+                          value={svcForm.sort_order}
+                          onChange={(e) => setSvcForm({ ...svcForm, sort_order: e.target.value })}
+                          placeholder="0"
+                          className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none transition-all"
+                        />
+                        <p className="mt-1 text-[11px] text-slate-500">Lower numbers appear first in lists.</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* TAB 2: IMAGES & MEDIA (Compact Verification) */}
+              {activeEditorTab === "images" && (
+                <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
+                  <div className="border-b border-[#efede8] px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-[#2c5270]" />
+                      <h2 className="text-sm font-bold text-slate-900">Service Images (Compact Verification)</h2>
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Compact image previews for quick verification and uploading without excessive scrolling.
+                    </p>
+                  </div>
+
+                  <div className="p-6 space-y-3.5">
+                    {/* 1. Main Image */}
+                    <CompactImageSlot
+                      title="Main Card Image"
+                      subtitle="Shown on customer search results and category service cards"
+                      recommendedSize="900 × 600 px"
+                      imageUrl={selectedService.main_image || selectedService.cover_image}
+                      disabled={!canEdit}
+                      uploading={uploadingSlot === "svc_main_image"}
+                      onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "main_image")}
+                      onClear={() => void handleServiceImageClear(selectedService.id, "main_image")}
+                    />
+
+                    {/* 2. Row Image */}
+                    <CompactImageSlot
+                      title="Listing Row Image"
+                      subtitle="Shown right beside the 'Add' button in service lists and homepage carousel"
+                      recommendedSize="600 × 600 px"
+                      imageUrl={selectedService.list_image}
+                      disabled={!canEdit}
+                      uploading={uploadingSlot === "svc_list_image"}
+                      onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "list_image")}
+                      onClear={() => void handleServiceImageClear(selectedService.id, "list_image")}
+                    />
+
+                    {/* 3. Pop-up Header Banner */}
+                    <CompactImageSlot
+                      title="Detail Modal Banner"
+                      subtitle="Panoramic header image at the top of the 'View details' popup modal"
+                      recommendedSize="1600 × 700 px"
+                      imageUrl={selectedService.popup_cover_image}
+                      disabled={!canEdit}
+                      uploading={uploadingSlot === "svc_popup_cover_image"}
+                      onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "popup_cover_image")}
+                      onClear={() => void handleServiceImageClear(selectedService.id, "popup_cover_image")}
+                    />
+
+                    {/* 4. Sub-service Page Banner */}
+                    <CompactImageSlot
+                      title="Landing Page Banner"
+                      subtitle="Hero cover on dedicated service page and customer checkout"
+                      recommendedSize="1920 × 600 px"
+                      imageUrl={selectedService.banner_image || selectedService.landing_thumbnail}
+                      disabled={!canEdit}
+                      uploading={uploadingSlot === "svc_banner_image"}
+                      onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "banner_image")}
+                      onClear={() => void handleServiceImageClear(selectedService.id, "banner_image")}
+                    />
+
+                    {/* Banner Overlay Text */}
+                    <div className="rounded-xl border border-slate-200 bg-[#faf9f6] p-3.5 space-y-2">
+                      <span className="text-xs font-bold text-slate-800 block">
+                        Optional Banner Text Overlay
+                      </span>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                          disabled={!canEdit}
+                          value={svcForm.banner_title}
+                          onChange={(e) => setSvcForm({ ...svcForm, banner_title: e.target.value })}
+                          placeholder="Banner headline (optional)"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-[#2c5270] focus:ring-1 focus:ring-[#2c5270] outline-none"
+                        />
+                        <input
+                          disabled={!canEdit}
+                          value={svcForm.banner_subtitle}
+                          onChange={(e) => setSvcForm({ ...svcForm, banner_subtitle: e.target.value })}
+                          placeholder="Banner subtitle (optional)"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 focus:border-[#2c5270] focus:ring-1 focus:ring-[#2c5270] outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Gallery Photos (Compact Verification Grid) */}
+                    <div className="rounded-xl border border-slate-200 bg-[#faf9f6] p-3.5 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">
+                            Gallery Photos ({selectedService.images.length})
+                          </h4>
+                          <p className="text-[11px] text-slate-500">Carousel photos in service detail modal</p>
+                        </div>
+                        {canEdit && (
+                          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition">
+                            <ImagePlus className="h-3.5 w-3.5 text-[#2c5270]" />
+                            <span>Add Photos</span>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/jpeg,image/png,image/webp"
+                              className="hidden"
+                              onChange={(e) => {
+                                if (e.target.files?.length) void handleGalleryUpload(selectedService.id, e.target.files);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+
+                      {selectedService.images.length > 0 ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                          {selectedService.images.map((img) => (
+                            <div
+                              key={img.id}
+                              className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xs"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={resolveMediaSrc(img.url)}
+                                alt={img.alt_text || selectedService.name}
+                                className="h-full w-full object-cover"
+                              />
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteGalleryItem(selectedService.id, img.id)}
+                                  className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-white hover:bg-red-600 transition"
+                                  title="Delete photo"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="py-2 text-center text-xs text-slate-400">
+                          No gallery photos uploaded yet.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Supported Brands */}
+                    <div className="rounded-xl border border-slate-200 bg-[#faf9f6] p-3.5 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-xs font-bold text-slate-900">Supported Brands</h4>
+                        <span className="text-[11px] text-slate-500">Logos displayed in detail modal</span>
+                      </div>
+                      <ServiceBrandsEditor
+                        serviceId={selectedService.id}
+                        brands={selectedService.brands ?? []}
+                        canEdit={canEdit}
+                        onSaved={loadAll}
+                      />
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* TAB 3: INCLUSIONS & DETAILS */}
+              {activeEditorTab === "details" && (
+                <div className="space-y-5">
+                  {/* Scope & Inclusions */}
                   <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
                     <div className="border-b border-[#efede8] px-6 py-4">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-[#2c5270]" />
-                        <h2 className="text-sm font-bold text-slate-900">Service Scope, Inclusions & Features</h2>
+                        <h2 className="text-sm font-bold text-slate-900">Included Tasks & Highlights</h2>
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        Clearly define what is performed, key highlights, and excluded tasks to set proper customer expectations.
+                        Listed with checkmarks inside customer booking modal and service details.
                       </p>
                     </div>
 
@@ -1600,7 +1874,7 @@ export function AdminServicesScreen({
                       <PillListEditor
                         label="Included Tasks (What's included)"
                         helperText="Listed with checkmarks inside customer booking modal and service detail view."
-                        placeholder="e.g. Deep jet foam wash, Filter cleaning..."
+                        placeholder="e.g. Deep foam jet wash, Filter cleaning..."
                         items={svcForm.inclusions}
                         variant="inclusion"
                         onChange={(inclusions) => setSvcForm({ ...svcForm, inclusions })}
@@ -1608,30 +1882,18 @@ export function AdminServicesScreen({
                       />
 
                       <PillListEditor
-                        label="Service Features & Highlights"
-                        helperText="Key selling points highlighted to customers (e.g. 30-day warranty, Genuine spares)."
+                        label="Service Highlights (Features)"
+                        helperText="Key selling points highlighted to customers (e.g. 30-day warranty)."
                         placeholder="e.g. 30-Day Service Warranty, Trained & Verified Experts..."
                         items={svcForm.features}
                         variant="feature"
                         onChange={(features) => setSvcForm({ ...svcForm, features })}
                         disabled={!canEdit}
                       />
-
-                      <PillListEditor
-                        label="Excluded Items (What's not included)"
-                        helperText="Clarifies tasks not covered so customers have realistic expectations."
-                        placeholder="e.g. Spare parts replacement charges, Masonry work..."
-                        items={svcForm.exclusions}
-                        variant="exclusion"
-                        onChange={(exclusions) => setSvcForm({ ...svcForm, exclusions })}
-                        disabled={!canEdit}
-                      />
                     </div>
                   </section>
-                )}
 
-                {/* 3. FULL DESCRIPTION */}
-                {(activeEditorTab === "description" || activeEditorTab === "all") && (
+                  {/* Detailed Description */}
                   <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
                     <div className="border-b border-[#efede8] px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -1639,7 +1901,7 @@ export function AdminServicesScreen({
                         <h2 className="text-sm font-bold text-slate-900">Detailed Description</h2>
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        Detailed service writeup presented on the service landing page and detail popup.
+                        Detailed writeup shown on the service page and modal popup.
                       </p>
                     </div>
 
@@ -1651,492 +1913,99 @@ export function AdminServicesScreen({
                       />
                     </div>
                   </section>
-                )}
 
-                {/* 4. FAQS & SEO */}
-                {(activeEditorTab === "faqs" || activeEditorTab === "all") && (
+                  {/* FAQs */}
                   <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
                     <div className="border-b border-[#efede8] px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <HelpCircle className="h-4 w-4 text-[#2c5270]" />
-                        <h2 className="text-sm font-bold text-slate-900">Frequently Asked Questions & SEO</h2>
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        Help customers answer common queries and optimize service search engine ranking.
-                      </p>
-                    </div>
-
-                    <div className="p-6 space-y-6">
-                      {/* FAQs Builder */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-slate-800">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <HelpCircle className="h-4 w-4 text-[#2c5270]" />
+                          <h2 className="text-sm font-bold text-slate-900">
                             Frequently Asked Questions ({svcForm.faqs.length})
-                          </label>
-                          {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setSvcForm({
-                                  ...svcForm,
-                                  faqs: [...svcForm.faqs, { question: "", answer: "" }],
-                                })
-                              }
-                              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#2c5270] shadow-2xs hover:bg-slate-50 transition"
-                            >
-                              <Plus className="h-3.5 w-3.5" /> Add Question
-                            </button>
-                          )}
+                          </h2>
                         </div>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSvcForm({
+                                ...svcForm,
+                                faqs: [...svcForm.faqs, { question: "", answer: "" }],
+                              })
+                            }
+                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#2c5270] shadow-2xs hover:bg-slate-50 transition"
+                          >
+                            <Plus className="h-3.5 w-3.5" /> Add Question
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
-                        {svcForm.faqs.length === 0 ? (
-                          <div className="rounded-xl border border-dashed border-slate-200 bg-[#faf9f6] p-6 text-center text-xs text-slate-400">
-                            No FAQs added yet. Click &quot;Add Question&quot; to provide answers for customer questions.
-                          </div>
-                        ) : (
-                          svcForm.faqs.map((faq, i) => (
-                            <div
-                              key={i}
-                              className="rounded-xl border border-slate-200 bg-[#faf9f6] p-4 space-y-2.5 transition"
-                            >
-                              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                                <span className="inline-flex items-center gap-1.5">
-                                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[#2c5270] text-[10px] text-white">
-                                    {i + 1}
-                                  </span>
-                                  <span>FAQ #{i + 1}</span>
+                    <div className="p-6 space-y-3">
+                      {svcForm.faqs.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-slate-200 bg-[#faf9f6] p-6 text-center text-xs text-slate-400">
+                          No FAQs added yet. Click &quot;Add Question&quot; to provide answers for customer questions.
+                        </div>
+                      ) : (
+                        svcForm.faqs.map((faq, i) => (
+                          <div
+                            key={i}
+                            className="rounded-xl border border-slate-200 bg-[#faf9f6] p-4 space-y-2.5 transition"
+                          >
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="grid h-5 w-5 place-items-center rounded-full bg-[#2c5270] text-[10px] text-white">
+                                  {i + 1}
                                 </span>
-                                {canEdit && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setSvcForm({
-                                        ...svcForm,
-                                        faqs: svcForm.faqs.filter((_, idx) => idx !== i),
-                                      })
-                                    }
-                                    className="text-red-600 hover:text-red-800 text-xs font-semibold"
-                                  >
-                                    Remove
-                                  </button>
-                                )}
-                              </div>
-                              <input
-                                disabled={!canEdit}
-                                value={faq.question}
-                                onChange={(e) => {
-                                  const next = [...svcForm.faqs];
-                                  next[i] = { ...next[i], question: e.target.value };
-                                  setSvcForm({ ...svcForm, faqs: next });
-                                }}
-                                placeholder="e.g. How often should AC deep cleaning be done?"
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
-                              />
-                              <textarea
-                                rows={2}
-                                disabled={!canEdit}
-                                value={faq.answer}
-                                onChange={(e) => {
-                                  const next = [...svcForm.faqs];
-                                  next[i] = { ...next[i], answer: e.target.value };
-                                  setSvcForm({ ...svcForm, faqs: next });
-                                }}
-                                placeholder="Answer provided to customers..."
-                                className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
-                              />
+                                <span>FAQ #{i + 1}</span>
+                              </span>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSvcForm({
+                                      ...svcForm,
+                                      faqs: svcForm.faqs.filter((_, idx) => idx !== i),
+                                    })
+                                  }
+                                  className="text-red-600 hover:text-red-800 text-xs font-semibold"
+                                >
+                                  Remove
+                                </button>
+                              )}
                             </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* SEO Fields */}
-                      <div className="border-t border-[#efede8] pt-5 space-y-3">
-                        <label className="text-xs font-bold text-slate-800 block">
-                          Search Engine Optimization (SEO)
-                        </label>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div>
-                            <span className="text-[11px] font-semibold text-slate-500 mb-1 block">SEO Page Title</span>
                             <input
                               disabled={!canEdit}
-                              value={svcForm.seo_title}
-                              onChange={(e) => setSvcForm({ ...svcForm, seo_title: e.target.value })}
-                              placeholder="e.g. Best AC Cleaning in Bengaluru | NammaPros"
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
+                              value={faq.question}
+                              onChange={(e) => {
+                                const next = [...svcForm.faqs];
+                                next[i] = { ...next[i], question: e.target.value };
+                                setSvcForm({ ...svcForm, faqs: next });
+                              }}
+                              placeholder="e.g. How often should AC deep cleaning be done?"
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
                             />
-                          </div>
-                          <div>
-                            <span className="text-[11px] font-semibold text-slate-500 mb-1 block">SEO Meta Description</span>
-                            <input
+                            <textarea
+                              rows={2}
                               disabled={!canEdit}
-                              value={svcForm.seo_description}
-                              onChange={(e) => setSvcForm({ ...svcForm, seo_description: e.target.value })}
-                              placeholder="e.g. Book expert AC service at best prices in Bengaluru..."
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
+                              value={faq.answer}
+                              onChange={(e) => {
+                                const next = [...svcForm.faqs];
+                                next[i] = { ...next[i], answer: e.target.value };
+                                setSvcForm({ ...svcForm, faqs: next });
+                              }}
+                              placeholder="Answer provided to customers..."
+                              className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
                             />
                           </div>
-                        </div>
-
-                        {/* Google Search Result Preview Simulation */}
-                        <div className="rounded-xl border border-slate-200 bg-[#faf9f6] p-3.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                            Google Search Preview
-                          </span>
-                          <p className="text-xs text-emerald-700 truncate">
-                            https://nammapros.com/services/{selectedCategory?.slug || "ac"}/{svcForm.slug || selectedService.slug}
-                          </p>
-                          <h4 className="text-sm font-semibold text-blue-700 hover:underline truncate">
-                            {svcForm.seo_title || `${svcForm.name || selectedService.name} | NammaPros Services`}
-                          </h4>
-                          <p className="text-[11px] text-slate-600 line-clamp-2 mt-0.5">
-                            {svcForm.seo_description || svcForm.summary || "Professional doorstep service delivered by verified experts with 30-day warranty."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                {/* 5. IMAGES & MEDIA */}
-                {(activeEditorTab === "images" || activeEditorTab === "all") && (
-                  <section className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
-                    <div className="border-b border-[#efede8] px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4 text-[#2c5270]" />
-                        <h2 className="text-sm font-bold text-slate-900">Service Image Assets & Customer Placements</h2>
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        Upload photography for each slot. Each slot includes an exact description of where customers see the image on the site.
-                      </p>
-                    </div>
-
-                    <div className="p-6 space-y-6">
-                      {/* Slot 1: Main Image */}
-                      <ImageUploadSlotBox
-                        title="Service main image (Card artwork)"
-                        recommendedSize="900 × 600 px (3:2 ratio)"
-                        placementBadge="Search & Category Cards"
-                        customerPlacement="Primary image shown on category service cards, search result listings, and social share links. Also acts as the default fallback everywhere on the website when other specific slot images are not set."
-                        imageUrl={selectedService.main_image || selectedService.cover_image}
-                        disabled={!canEdit}
-                        uploading={uploadingSlot === "svc_main_image"}
-                        onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "main_image")}
-                        onClear={() => void handleServiceImageClear(selectedService.id, "main_image")}
-                      />
-
-                      {/* Slot 2: Row Image */}
-                      <ImageUploadSlotBox
-                        title="Row image (Next to the 'Add' button)"
-                        recommendedSize="600 × 600 px (1:1 square)"
-                        placementBadge="Category Booking Row & Homepage"
-                        customerPlacement="Displayed right beside the service title and green/blue 'Add' button in category lists (e.g. /services/ac). Also featured in the 'Most Booked Services' quick-booking carousel on the customer homepage."
-                        aspectClass="aspect-square max-w-[240px]"
-                        imageUrl={selectedService.list_image}
-                        disabled={!canEdit}
-                        uploading={uploadingSlot === "svc_list_image"}
-                        onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "list_image")}
-                        onClear={() => void handleServiceImageClear(selectedService.id, "list_image")}
-                      />
-
-                      {/* Slot 3: Pop-up Cover Banner */}
-                      <ImageUploadSlotBox
-                        title="Pop-up header banner"
-                        recommendedSize="1600 × 700 px (16:7 panoramic)"
-                        placementBadge="Service Detail Modal Header"
-                        customerPlacement="Featured as the prominent panoramic hero header at the top of the Service Detail Modal popup when a customer clicks 'View details' or taps on this service."
-                        imageUrl={selectedService.popup_cover_image}
-                        disabled={!canEdit}
-                        uploading={uploadingSlot === "svc_popup_cover_image"}
-                        aspectClass="aspect-[16/7]"
-                        onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "popup_cover_image")}
-                        onClear={() => void handleServiceImageClear(selectedService.id, "popup_cover_image")}
-                      />
-
-                      {/* Slot 4: Sub-service Page Banner */}
-                      <div className="space-y-3">
-                        <ImageUploadSlotBox
-                          title="Sub-service landing page banner"
-                          recommendedSize="1920 × 600 px (16:5 ultra-wide)"
-                          placementBadge="Dedicated Page & Checkout Header"
-                          customerPlacement="Shown as the wide top hero cover across the dedicated service landing page (e.g. /services/ac/service-name) and above the booking summary in the customer checkout step."
-                          imageUrl={selectedService.banner_image || selectedService.landing_thumbnail}
-                          disabled={!canEdit}
-                          uploading={uploadingSlot === "svc_banner_image"}
-                          aspectClass="aspect-[16/5]"
-                          onUpload={(f) => void handleServiceImageUpload(selectedService.id, f, "banner_image")}
-                          onClear={() => void handleServiceImageClear(selectedService.id, "banner_image")}
-                        />
-
-                        <div className="rounded-xl border border-slate-200 bg-[#faf9f6] p-4 space-y-3">
-                          <label className="text-xs font-bold text-slate-800 block">
-                            Sub-service Banner Overlay Text
-                          </label>
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <span className="text-[11px] font-semibold text-slate-500 mb-1 block">Banner Title</span>
-                              <input
-                                disabled={!canEdit}
-                                value={svcForm.banner_title}
-                                onChange={(e) => setSvcForm({ ...svcForm, banner_title: e.target.value })}
-                                placeholder="e.g. Expert Foam-Jet Cleaning"
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
-                              />
-                            </div>
-                            <div>
-                              <span className="text-[11px] font-semibold text-slate-500 mb-1 block">Banner Subtitle</span>
-                              <input
-                                disabled={!canEdit}
-                                value={svcForm.banner_subtitle}
-                                onChange={(e) => setSvcForm({ ...svcForm, banner_subtitle: e.target.value })}
-                                placeholder="e.g. 2X deeper clean with certified chemical wash"
-                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-xs text-slate-800 focus:border-[#2c5270] focus:ring-2 focus:ring-[#2c5270]/15 outline-none"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Slot 5: Supported Brands */}
-                      <div className="rounded-2xl border border-[#e7e5df] bg-[#faf9f6] p-5 space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h4 className="text-xs font-bold text-slate-900">Supported Brands</h4>
-                          <span className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-                            SVG / PNG transparent
-                          </span>
-                        </div>
-                        <div className="rounded-xl border border-sky-100 bg-sky-50/85 p-3 text-xs text-sky-950 shadow-2xs">
-                          <div className="flex items-center gap-1.5 font-bold text-[#2c5270]">
-                            <Eye className="h-3.5 w-3.5 shrink-0 text-[#2c5270]" />
-                            <span>Where customers see this on website:</span>
-                            <span className="ml-auto rounded-md bg-[#2c5270]/10 px-2 py-0.5 text-[10px] font-bold text-[#2c5270]">
-                              Service Detail Popup & Page
-                            </span>
-                          </div>
-                          <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-                            Displayed in the &quot;Brands We Service &amp; Repair&quot; logo strip inside the customer service modal (e.g. Daikin, LG, Voltas), reassuring customers that their brand is covered.
-                          </p>
-                        </div>
-                        <ServiceBrandsEditor
-                          serviceId={selectedService.id}
-                          brands={selectedService.brands ?? []}
-                          brandsImage={selectedService.brands_image}
-                          canEdit={canEdit}
-                          onSaved={loadAll}
-                        />
-                      </div>
-
-                      {/* Slot 6: Gallery Photos */}
-                      <div className="rounded-2xl border border-[#e7e5df] bg-[#faf9f6] p-5 space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-900">
-                              Gallery Photos ({selectedService.images.length})
-                            </h4>
-                            <p className="text-[11px] text-slate-500">1200 × 900 px · JPG, PNG, WebP</p>
-                          </div>
-                          {canEdit && (
-                            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition">
-                              <ImagePlus className="h-3.5 w-3.5 text-[#2c5270]" />
-                              <span>Add Photos</span>
-                              <input
-                                type="file"
-                                multiple
-                                accept="image/jpeg,image/png,image/webp"
-                                className="hidden"
-                                onChange={(e) => {
-                                  if (e.target.files?.length) void handleGalleryUpload(selectedService.id, e.target.files);
-                                  e.target.value = "";
-                                }}
-                              />
-                            </label>
-                          )}
-                        </div>
-
-                        <div className="rounded-xl border border-sky-100 bg-sky-50/85 p-3 text-xs text-sky-950 shadow-2xs">
-                          <div className="flex items-center gap-1.5 font-bold text-[#2c5270]">
-                            <Eye className="h-3.5 w-3.5 shrink-0 text-[#2c5270]" />
-                            <span>Where customers see this on website:</span>
-                            <span className="ml-auto rounded-md bg-[#2c5270]/10 px-2 py-0.5 text-[10px] font-bold text-[#2c5270]">
-                              Service Detail Modal Gallery
-                            </span>
-                          </div>
-                          <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-                            Rendered as a photo carousel inside the service modal to provide customers visual proof of work, actual technician equipment, safety gear, and before/after results.
-                          </p>
-                        </div>
-
-                        {selectedService.images.length > 0 ? (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {selectedService.images.map((img) => (
-                              <div
-                                key={img.id}
-                                className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xs"
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={resolveMediaSrc(img.url)}
-                                  alt={img.alt_text || selectedService.name}
-                                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                                />
-                                {canEdit && (
-                                  <button
-                                    type="button"
-                                    onClick={() => void handleDeleteGalleryItem(selectedService.id, img.id)}
-                                    className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-white/90 text-red-600 shadow-xs hover:bg-white transition"
-                                    title="Delete photo"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400">
-                            No gallery photos uploaded yet. Upload before/after images to boost customer confidence.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </section>
-                )}
-              </div>
-
-              {/* RIGHT: Customer Preview & Quick Asset Checklist */}
-              <aside className="space-y-5 lg:sticky lg:top-28">
-                {/* 1. Customer Live Preview Card */}
-                <div className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
-                  <div className="border-b border-[#efede8] px-5 py-3.5 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-slate-900">Customer Site Preview</h3>
-                      <p className="text-[11px] text-slate-500">Live card preview as shown on website</p>
-                    </div>
-                    <span className="rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold">
-                      Customer View
-                    </span>
-                  </div>
-
-                  <div className="p-4">
-                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm hover:border-[#2c5270]/40 transition">
-                      <div className="flex items-start gap-3.5">
-                        <ServiceThumbPreview
-                          src={resolveMediaSrc(selectedService.list_image || selectedService.main_image || selectedService.cover_image)}
-                          name={svcForm.name || selectedService.name}
-                          className="h-14 w-14 rounded-xl"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#2c5270]">
-                            {selectedCategory?.name || selectedService.category_name || "Service"}
-                          </span>
-                          <h4 className="text-sm font-bold text-slate-900 truncate">
-                            {svcForm.name || selectedService.name}
-                          </h4>
-                          <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">
-                            {svcForm.summary || "Customer summary will appear here."}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-3">
-                        <div>
-                          <span className="text-[11px] text-slate-400 block">Starting from</span>
-                          <span className="text-base font-bold text-slate-900">
-                            {svcForm.price_rupees ? `₹${Number(svcForm.price_rupees).toLocaleString("en-IN")}` : "₹299"}
-                          </span>
-                          {svcForm.price_note && (
-                            <span className="text-[10px] text-slate-500 block">{svcForm.price_note}</span>
-                          )}
-                        </div>
-
-                        <div className="rounded-lg bg-[#2c5270] px-4 py-1.5 text-xs font-bold text-white shadow-2xs">
-                          Add +
-                        </div>
-                      </div>
-
-                      {svcForm.inclusions.length > 0 && (
-                        <div className="mt-2.5 rounded-lg bg-[#faf9f6] p-2 text-[11px] text-slate-600 flex items-center gap-1.5">
-                          <Check className="h-3 w-3 text-emerald-600 shrink-0" />
-                          <span className="truncate">Includes {svcForm.inclusions[0]} +{svcForm.inclusions.length - 1} more</span>
-                        </div>
+                        ))
                       )}
                     </div>
-
-                    <a
-                      href={`https://nammapros.com/services/${selectedCategory?.slug || selectedService.category_slug || "ac"}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-[#faf9f6] py-2 text-xs font-bold text-[#2c5270] hover:bg-slate-100 transition-colors"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      <span>Open Customer Website ↗</span>
-                    </a>
-                  </div>
+                  </section>
                 </div>
-
-                {/* 2. Visual Media Checklist */}
-                <div className="overflow-hidden rounded-2xl border border-[#e7e5df] bg-white shadow-xs">
-                  <div className="border-b border-[#efede8] px-5 py-3.5 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-slate-900">Image Asset Checklist</h3>
-                      <p className="text-[11px] text-slate-500">Ensure all customer images are configured</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveEditorTab("images")}
-                      className="text-[11px] font-bold text-[#2c5270] hover:underline"
-                    >
-                      Edit images
-                    </button>
-                  </div>
-
-                  <div className="divide-y divide-[#efede8] px-5 text-xs">
-                    {[
-                      {
-                        label: "Main Image",
-                        desc: "Customer search & category cards",
-                        present: Boolean(selectedService.main_image || selectedService.cover_image),
-                      },
-                      {
-                        label: "Row Image",
-                        desc: "Next to Add button in category list",
-                        present: Boolean(selectedService.list_image),
-                      },
-                      {
-                        label: "Popup Banner",
-                        desc: "Top of service modal popup",
-                        present: Boolean(selectedService.popup_cover_image),
-                      },
-                      {
-                        label: "Landing Banner",
-                        desc: "Top hero on service page",
-                        present: Boolean(selectedService.banner_image || selectedService.landing_thumbnail),
-                      },
-                      {
-                        label: "Gallery Photos",
-                        desc: `${selectedService.images.length} photos uploaded`,
-                        present: selectedService.images.length > 0,
-                      },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2.5">
-                        <div className="min-w-0 pr-2">
-                          <p className="font-semibold text-slate-800">{item.label}</p>
-                          <p className="text-[11px] text-slate-500 truncate">{item.desc}</p>
-                        </div>
-                        <span
-                          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            item.present
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
-                        >
-                          {item.present ? "Ready" : "Missing"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </aside>
+              )}
             </div>
+
           </form>
         ) : selectedCategory ? (
           /* ================================================================= */
