@@ -41,6 +41,7 @@ import { AdminBookingDrawer } from "./admin-booking-drawer";
 import { CouponsManager } from "./admin-coupons";
 import { DataRequestsManager } from "./admin-data-requests";
 import { ChangePasswordDialog, RolePermissions, StaffManager } from "./staff-manager";
+import { AdminLoginPage } from "./admin-login-page";
 
 type Me = { id: number; phone_e164: string; roles: string[]; capabilities: string[] };
 type Field = { key: string; label?: string; type?: "number" | "date" | "datetime-local" | "checkbox" | "json"; required?: boolean };
@@ -326,18 +327,24 @@ export default function Portal() {
     router.push("/login");
   };
 
-  const signIn = async () => {
+  const signIn = async (identifierParam?: string, passwordParam?: string) => {
     setBusy(true);
     setError("");
     try {
-      // Staff sign in with phone number (or username) and password; the session cookie keeps them signed in.
-      await api("/auth/password/login/", "POST", { phone_e164: phone.replace(/\s/g, ""), password });
+      const cleanId = (identifierParam ?? phone).trim();
+      const cleanPass = passwordParam ?? password;
+      // Staff sign in with phone number, username, or email and password; the session cookie keeps them signed in.
+      await api("/auth/password/login/", "POST", {
+        phone_e164: cleanId,
+        username: cleanId,
+        password: cleanPass,
+      });
       setPassword("");
       clearCsrf();
       setMe(await api<Me>("/admin/me/"));
       router.push("/dashboard");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Sign in failed.");
+      setError(e instanceof Error ? e.message : "Sign in failed. Please check your credentials.");
     } finally {
       setBusy(false);
     }
@@ -349,7 +356,7 @@ export default function Portal() {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#961b36] border-t-transparent" />
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Authenticating Staff...</p>
         </div>
       </main>
@@ -358,68 +365,11 @@ export default function Portal() {
 
   if (!me) {
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-100 p-4">
-        <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
-          <div className="text-center">
-            <span className="text-3xl font-black text-slate-900 tracking-tight">
-              nammapros<span className="text-teal-600">.</span>
-            </span>
-            <p className="mt-2 text-[11px] font-bold uppercase tracking-widest text-teal-700">Staff Control Console</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Admin Sign In</h1>
-            <p className="mt-1 text-xs text-slate-500">Sign in with your staff phone number and password</p>
-          </div>
-
-          <form className="mt-6 space-y-4" onSubmit={(e) => { e.preventDefault(); if (!busy) void signIn(); }}>
-            <div>
-              <label htmlFor="admin-phone" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Phone number</label>
-              <input
-                id="admin-phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                autoComplete="username"
-                inputMode="tel"
-                required
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
-                placeholder="+91..."
-              />
-            </div>
-
-            <div>
-              <label htmlFor="admin-password" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Password</label>
-              <div className="relative mt-1">
-                <input
-                  id="admin-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                  className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 pr-16 text-sm text-slate-900 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute inset-y-0 right-2 my-auto h-7 rounded px-2 text-xs font-bold text-teal-800 hover:bg-teal-50"
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
-              </div>
-            </div>
-
-            {error && <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-800">{error}</div>}
-
-            <button
-              type="submit"
-              disabled={busy || !password || phone.replace(/\D/g, "").length < 10}
-              className="w-full rounded-lg bg-teal-700 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-teal-800 disabled:opacity-50 transition"
-            >
-              {busy ? "Signing in..." : "Sign in"}
-            </button>
-            <p className="text-center text-[11px] text-slate-500">Forgot your password? Ask a super admin to reset it.</p>
-          </form>
-        </section>
-      </main>
+      <AdminLoginPage
+        onSignIn={(id, pass) => signIn(id, pass)}
+        busy={busy}
+        error={error}
+      />
     );
   }
 
