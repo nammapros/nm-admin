@@ -15,8 +15,8 @@ export function AdminLoginPage({
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [keepSignedIn, setKeepSignedIn] = useState(true);
-  const [inputFocused, setInputFocused] = useState<"id" | "pass" | null>(null);
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [activeField, setActiveField] = useState<"id" | "pass">("id");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,460 +29,481 @@ export function AdminLoginPage({
       style={{
         position: "fixed",
         inset: 0,
+        width: "100vw",
         height: "100vh",
         maxHeight: "100vh",
-        width: "100vw",
         overflow: "hidden",
-        display: "flex",
-        flexDirection: "row",
+        background: "linear-gradient(to right, #400716 0%, #400716 75.4%, #f1f3f6 75.4%, #f1f3f6 100%)",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        userSelect: "none",
       }}
     >
       {/* =================================================================== */}
-      {/* LEFT HERO SECTION (Burgundy Brand + Technicians)                    */}
+      {/* WATERMARK ICONS (Bottom Left)                                       */}
       {/* =================================================================== */}
       <div
         style={{
-          flex: 1,
-          height: "100vh",
-          backgroundColor: "#4a0e1c",
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "36px 48px 0 48px",
-          overflow: "hidden",
+          position: "absolute",
+          bottom: "10px",
+          left: "20px",
+          width: "440px",
+          opacity: 0.07,
+          pointerEvents: "none",
+          zIndex: 1,
         }}
       >
-        {/* Subtle Watermark Vector (Bottom Left Behind Technicians) */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10px",
-            left: "10px",
-            width: "420px",
-            opacity: 0.07,
-            pointerEvents: "none",
-            userSelect: "none",
-            zIndex: 1,
-          }}
-        >
-          <svg viewBox="0 0 420 320" fill="none" stroke="#ffffff" strokeWidth="2.5" style={{ width: "100%", height: "auto" }}>
-            {/* Sofa */}
-            <path d="M30 240 h300 v30 h-18 v16 h-16 v-16 h-232 v16 h-16 v-16 h-18 z" />
-            <path d="M30 240 v-60 a16 16 0 0 1 16 -16 h24 v44 h220 v-44 h24 a16 16 0 0 1 16 16 v60" />
-            <path d="M70 164 v-30 a24 24 0 0 1 24 -24 h172 a24 24 0 0 1 24 24 v30" />
-            {/* Hammer */}
-            <path d="M50 70 l30 30 m-6 -22 l-40 40 a8 8 0 0 0 11 11 l40 -40" />
-            <path d="M82 48 l12 12 -12 12 -12 -12 z" />
-            {/* Wrench */}
-            <path d="M200 60 l-40 40 a8 8 0 0 0 11 11 l40 -40 m-16 -24 a16 16 0 0 1 16 16 l-8 8 -12 -12 8 -8" />
-          </svg>
-        </div>
-
-        {/* Top Header: Logo + Divider + Admin Panel */}
-        <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "24px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.5px" }}>
-              namma
-            </span>
-            <span
-              style={{
-                fontSize: "24px",
-                fontWeight: 900,
-                color: "#ffffff",
-                backgroundColor: "#8B1D42",
-                padding: "2px 8px",
-                borderRadius: "6px",
-                letterSpacing: "-0.5px",
-              }}
-            >
-              pros.
-            </span>
-          </div>
-          <span style={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "18px", fontWeight: 300 }}>|</span>
-          <span style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "14px", fontWeight: 500, letterSpacing: "0.2px" }}>
-            Admin Panel
-          </span>
-        </div>
-
-        {/* Hero Headline & Subtitle */}
-        <div style={{ position: "relative", zIndex: 10, marginTop: "24px", maxWidth: "560px" }}>
-          <h1
-            style={{
-              fontSize: "36px",
-              fontWeight: 800,
-              color: "#ffffff",
-              letterSpacing: "-0.5px",
-              lineHeight: 1.15,
-              margin: 0,
-            }}
-          >
-            India&apos;s trusted home service
-          </h1>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "rgba(255, 255, 255, 0.8)",
-              margin: "8px 0 0 0",
-              fontWeight: 400,
-            }}
-          >
-            Managing the platform that powers home service
-          </p>
-        </div>
-
-        {/* Technicians Cutout Photo (Pinned cleanly to bottom) */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 10,
-            marginTop: "auto",
-            display: "flex",
-            alignItems: "flex-end",
-            lineHeight: 0,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/brand/hero-technicians-pair.webp"
-            alt="NammaPros Technicians"
-            style={{
-              height: "58vh",
-              maxHeight: "480px",
-              width: "auto",
-              objectFit: "contain",
-              objectPosition: "bottom left",
-              filter: "drop-shadow(0 15px 30px rgba(0,0,0,0.35))",
-              userSelect: "none",
-            }}
-          />
-        </div>
+        <svg viewBox="0 0 450 340" fill="none" stroke="#ffffff" strokeWidth="2.5" style={{ width: "100%", height: "auto" }}>
+          {/* Sofa */}
+          <path d="M40 250 h300 v32 h-18 v16 h-16 v-16 h-232 v16 h-16 v-16 h-18 z" />
+          <path d="M40 250 v-65 a16 16 0 0 1 16 -16 h24 v48 h220 v-48 h24 a16 16 0 0 1 16 16 v65" />
+          <path d="M80 169 v-30 a26 26 0 0 1 26 -26 h168 a26 26 0 0 1 26 26 v30" />
+          {/* Hammer */}
+          <path d="M55 75 l32 32 m-7 -24 l-42 42 a8 8 0 0 0 12 12 l42 -42" />
+          <path d="M89 51 l14 14 -14 14 -14 -14 z" />
+          {/* Wrench */}
+          <path d="M210 65 l-42 42 a8 8 0 0 0 12 12 l42 -42 m-16 -25 a16 16 0 0 1 16 16 l-8 8 -13 -13 8 -8" />
+        </svg>
       </div>
 
       {/* =================================================================== */}
-      {/* RIGHT LOGIN SECTION (Light Gray Background + Floating White Card)   */}
+      {/* SPARKLE WATERMARK (Bottom Right Light Background)                   */}
       {/* =================================================================== */}
       <div
         style={{
-          width: "480px",
-          minWidth: "420px",
-          height: "100vh",
-          backgroundColor: "#f5f6f9",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px",
-          boxSizing: "border-box",
+          position: "absolute",
+          bottom: "32px",
+          right: "36px",
+          width: "36px",
+          height: "36px",
+          opacity: 0.45,
+          pointerEvents: "none",
+          zIndex: 1,
         }}
       >
-        {/* Floating White Card */}
-        <div
+        <svg viewBox="0 0 100 100" fill="#ffffff" style={{ width: "100%", height: "100%", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.06))" }}>
+          <path d="M50 0 C50 32 68 50 100 50 C68 50 50 68 50 100 C50 68 32 50 0 50 C32 50 50 32 50 0 Z" />
+        </svg>
+      </div>
+
+      {/* =================================================================== */}
+      {/* TOP-LEFT HEADER (Logo + Admin Panel)                                */}
+      {/* =================================================================== */}
+      <div
+        style={{
+          position: "absolute",
+          top: "40px",
+          left: "60px",
+          display: "flex",
+          alignItems: "center",
+          gap: "14px",
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "24px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.5px" }}>
+            namma
+          </span>
+          <span
+            style={{
+              fontSize: "24px",
+              fontWeight: 900,
+              color: "#ffffff",
+              backgroundColor: "#7b092a",
+              padding: "2px 8px",
+              borderRadius: "6px",
+              letterSpacing: "-0.5px",
+            }}
+          >
+            pros.
+          </span>
+        </div>
+        <span style={{ color: "rgba(255, 255, 255, 0.4)", fontSize: "20px", fontWeight: 300 }}>|</span>
+        <span style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: "14px", fontWeight: 500, letterSpacing: "0.2px" }}>
+          Admin Panel
+        </span>
+      </div>
+
+      {/* =================================================================== */}
+      {/* HERO HEADLINE & SUBTITLE                                            */}
+      {/* =================================================================== */}
+      <div
+        style={{
+          position: "absolute",
+          top: "98px",
+          left: "60px",
+          maxWidth: "520px",
+          zIndex: 10,
+        }}
+      >
+        <h1
           style={{
-            width: "100%",
-            maxWidth: "390px",
-            backgroundColor: "#ffffff",
-            borderRadius: "24px",
-            padding: "32px 32px 28px 32px",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)",
-            border: "1px solid #f1f2f5",
-            boxSizing: "border-box",
+            fontSize: "34px",
+            fontWeight: 800,
+            color: "#ffffff",
+            letterSpacing: "-0.6px",
+            lineHeight: 1.18,
+            margin: 0,
           }}
         >
-          {/* Card Top Logo */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-            <span style={{ fontSize: "23px", fontWeight: 900, color: "#111827", letterSpacing: "-0.5px" }}>
-              namma
-            </span>
-            <span
-              style={{
-                fontSize: "23px",
-                fontWeight: 900,
-                color: "#ffffff",
-                backgroundColor: "#8B1D42",
-                padding: "1px 7px",
-                borderRadius: "6px",
-                letterSpacing: "-0.5px",
-              }}
-            >
-              pros.
-            </span>
-          </div>
+          India&apos;s trusted home service
+        </h1>
+        <p
+          style={{
+            fontSize: "14px",
+            color: "rgba(255, 255, 255, 0.78)",
+            margin: "6px 0 0 0",
+            fontWeight: 400,
+          }}
+        >
+          Managing the platform that powers home service
+        </p>
+      </div>
 
-          {/* Heading & Subtitle */}
-          <div style={{ textAlign: "center", marginTop: "14px" }}>
-            <h2
+      {/* =================================================================== */}
+      {/* TECHNICIANS CUTOUT (Positioned at Left ~11%, Pinned to Bottom)      */}
+      {/* =================================================================== */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: "10.5%",
+          height: "68vh",
+          maxHeight: "510px",
+          zIndex: 10,
+          display: "flex",
+          alignItems: "flex-end",
+          lineHeight: 0,
+          pointerEvents: "none",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/brand/hero-technicians-pair.webp"
+          alt="NammaPros Technicians"
+          style={{
+            height: "100%",
+            width: "auto",
+            objectFit: "contain",
+            objectPosition: "bottom left",
+            filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.45))",
+            userSelect: "none",
+          }}
+        />
+      </div>
+
+      {/* =================================================================== */}
+      {/* FLOATING ADMIN LOGIN CARD (Overlapping the 75.4% Split Boundary)    */}
+      {/* =================================================================== */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          right: "7.5%",
+          transform: "translateY(-50%)",
+          width: "410px",
+          maxWidth: "90vw",
+          backgroundColor: "#ffffff",
+          borderRadius: "24px",
+          padding: "36px 36px 30px 36px",
+          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.28), 0 0 1px rgba(0, 0, 0, 0.15)",
+          border: "1px solid rgba(255, 255, 255, 0.8)",
+          boxSizing: "border-box",
+          zIndex: 20,
+        }}
+      >
+        {/* Card Top Logo */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
+          <span style={{ fontSize: "24px", fontWeight: 900, color: "#111827", letterSpacing: "-0.5px" }}>
+            namma
+          </span>
+          <span
+            style={{
+              fontSize: "24px",
+              fontWeight: 900,
+              color: "#ffffff",
+              backgroundColor: "#7b092a",
+              padding: "1px 7px",
+              borderRadius: "6px",
+              letterSpacing: "-0.5px",
+            }}
+          >
+            pros.
+          </span>
+        </div>
+
+        {/* Card Heading & Subtitle */}
+        <div style={{ textAlign: "center", marginTop: "14px" }}>
+          <h2
+            style={{
+              fontSize: "23px",
+              fontWeight: 800,
+              color: "#532031",
+              letterSpacing: "-0.4px",
+              margin: 0,
+            }}
+          >
+            Admin Login
+          </h2>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#6b7280",
+              margin: "4px 0 0 0",
+              fontWeight: 400,
+            }}
+          >
+            Sign in to access the management panel.
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} style={{ marginTop: "22px" }}>
+          {/* Email / Username Field */}
+          <div style={{ marginBottom: "14px" }}>
+            <label
+              htmlFor="admin-identifier"
               style={{
-                fontSize: "22px",
-                fontWeight: 800,
-                color: "#540e1e",
-                letterSpacing: "-0.3px",
-                margin: 0,
-              }}
-            >
-              Admin Login
-            </h2>
-            <p
-              style={{
+                display: "block",
                 fontSize: "12px",
-                color: "#6b7280",
-                margin: "4px 0 0 0",
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: "5px",
               }}
             >
-              Sign in to access the management panel.
-            </p>
-          </div>
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
-            {/* Email / Username Field */}
-            <div style={{ marginBottom: "14px" }}>
-              <label
-                htmlFor="admin-identifier"
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#374151",
-                  marginBottom: "5px",
-                }}
-              >
-                Email / Username
-              </label>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  borderRadius: "10px",
-                  border: inputFocused === "id" ? "1.5px solid #8B1D42" : "1.5px solid #d1d5db",
-                  backgroundColor: "#ffffff",
-                  padding: "9px 12px",
-                  boxShadow: inputFocused === "id" ? "0 0 0 3px rgba(139, 29, 66, 0.12)" : "none",
-                  transition: "all 0.15s ease",
-                }}
-              >
-                <User size={16} color="#9ca3af" style={{ flexShrink: 0 }} />
-                <input
-                  id="admin-identifier"
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  onFocus={() => setInputFocused("id")}
-                  onBlur={() => setInputFocused(null)}
-                  autoComplete="username"
-                  required
-                  placeholder=""
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    outline: "none",
-                    backgroundColor: "transparent",
-                    paddingLeft: "10px",
-                    fontSize: "13px",
-                    color: "#111827",
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div style={{ marginBottom: "12px" }}>
-              <label
-                htmlFor="admin-password"
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#374151",
-                  marginBottom: "5px",
-                }}
-              >
-                Password
-              </label>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  borderRadius: "10px",
-                  border: inputFocused === "pass" ? "1.5px solid #8B1D42" : "1.5px solid #d1d5db",
-                  backgroundColor: "#ffffff",
-                  padding: "9px 12px",
-                  boxShadow: inputFocused === "pass" ? "0 0 0 3px rgba(139, 29, 66, 0.12)" : "none",
-                  transition: "all 0.15s ease",
-                  position: "relative",
-                }}
-              >
-                <Lock size={16} color="#9ca3af" style={{ flexShrink: 0 }} />
-                <input
-                  id="admin-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setInputFocused("pass")}
-                  onBlur={() => setInputFocused(null)}
-                  autoComplete="current-password"
-                  required
-                  placeholder=""
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    outline: "none",
-                    backgroundColor: "transparent",
-                    paddingLeft: "10px",
-                    paddingRight: "55px",
-                    fontSize: "13px",
-                    color: "#111827",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "11px",
-                    fontWeight: 600,
-                    color: "#6b7280",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                  <span>{showPassword ? "Hide" : "Show"}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Checkbox & Forgot Password */}
+              Email / Username
+            </label>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                paddingTop: "2px",
+                borderRadius: "10px",
+                border: activeField === "id" ? "1.5px solid #8B1D42" : "1.5px solid #d1d5db",
+                backgroundColor: "#ffffff",
+                padding: "9px 12px",
+                boxShadow: activeField === "id" ? "0 0 0 3px rgba(139, 29, 66, 0.12)" : "none",
+                transition: "all 0.15s ease",
               }}
             >
-              <label
+              <User size={16} color="#4b5563" style={{ flexShrink: 0 }} />
+              <input
+                id="admin-identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                onFocus={() => setActiveField("id")}
+                autoComplete="username"
+                required
+                placeholder=""
+                autoFocus
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  cursor: "pointer",
-                  userSelect: "none",
+                  width: "100%",
+                  border: "none",
+                  outline: "none",
+                  backgroundColor: "transparent",
+                  paddingLeft: "10px",
+                  fontSize: "13px",
+                  color: "#111827",
                 }}
-              >
-                <input
-                  type="checkbox"
-                  checked={keepSignedIn}
-                  onChange={(e) => setKeepSignedIn(e.target.checked)}
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    accentColor: "#8B1D42",
-                    cursor: "pointer",
-                  }}
-                />
-                <span style={{ fontSize: "12px", color: "#4b5563" }}>Keep me signed in</span>
-              </label>
+              />
+            </div>
+          </div>
 
+          {/* Password Field */}
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              htmlFor="admin-password"
+              style={{
+                display: "block",
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#374151",
+                marginBottom: "5px",
+              }}
+            >
+              Password
+            </label>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                borderRadius: "10px",
+                border: activeField === "pass" ? "1.5px solid #8B1D42" : "1.5px solid #d1d5db",
+                backgroundColor: "#ffffff",
+                padding: "9px 12px",
+                boxShadow: activeField === "pass" ? "0 0 0 3px rgba(139, 29, 66, 0.12)" : "none",
+                transition: "all 0.15s ease",
+                position: "relative",
+              }}
+            >
+              <Lock size={16} color="#6b7280" style={{ flexShrink: 0 }} />
+              <input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setActiveField("pass")}
+                autoComplete="current-password"
+                required
+                placeholder=""
+                style={{
+                  width: "100%",
+                  border: "none",
+                  outline: "none",
+                  backgroundColor: "transparent",
+                  paddingLeft: "10px",
+                  paddingRight: "55px",
+                  fontSize: "13px",
+                  color: "#111827",
+                }}
+              />
               <button
                 type="button"
-                onClick={() =>
-                  alert("Please contact your Super Admin (+919629025814 / support@nammapros.com) to reset your password.")
-                }
+                onClick={() => setShowPassword(!showPassword)}
                 style={{
-                  fontSize: "12px",
+                  position: "absolute",
+                  right: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
                   fontWeight: 600,
-                  color: "#8B1D42",
+                  color: "#4b5563",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
                   padding: 0,
-                  textDecoration: "none",
                 }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                Forgot Password?
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                <span>{showPassword ? "Hide" : "Show"}</span>
               </button>
             </div>
+          </div>
 
-            {/* Error Banner */}
-            {error && (
-              <div
-                role="alert"
-                style={{
-                  marginTop: "12px",
-                  borderRadius: "10px",
-                  border: "1px solid #fecaca",
-                  backgroundColor: "#fef2f2",
-                  padding: "8px 12px",
-                  textAlign: "center",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#b91c1c",
-                }}
-              >
-                {error}
-              </div>
-            )}
-
-            {/* Sign In Button */}
-            <button
-              type="submit"
-              disabled={busy || !identifier.trim() || !password}
+          {/* Keep Signed In Checkbox & Forgot Password */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingTop: "2px",
+            }}
+          >
+            <label
               style={{
-                marginTop: "18px",
-                width: "100%",
-                borderRadius: "10px",
-                backgroundColor: "#540e1e",
-                padding: "11px 16px",
-                fontSize: "13px",
-                fontWeight: 700,
-                color: "#ffffff",
-                border: "none",
-                cursor: busy || !identifier.trim() || !password ? "not-allowed" : "pointer",
-                opacity: busy || !identifier.trim() || !password ? 0.6 : 1,
-                boxShadow: "0 4px 12px rgba(84, 14, 30, 0.3)",
-                transition: "all 0.15s ease",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
+                gap: "6px",
+                cursor: "pointer",
+                userSelect: "none",
               }}
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : null}
-              <span>{busy ? "Signing in..." : "Sign In"}</span>
-            </button>
+              <input
+                type="checkbox"
+                checked={keepSignedIn}
+                onChange={(e) => setKeepSignedIn(e.target.checked)}
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  accentColor: "#7b092a",
+                  cursor: "pointer",
+                }}
+              />
+              <span style={{ fontSize: "12px", color: "#4b5563" }}>Keep me signed in</span>
+            </label>
 
-            {/* Support Footer */}
-            <p
+            <button
+              type="button"
+              onClick={() =>
+                alert("Please contact your Super Admin (+919629025814 / support@nammapros.com) to reset your password.")
+              }
               style={{
-                paddingTop: "14px",
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#7b092a",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                textDecoration: "none",
+              }}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div
+              role="alert"
+              style={{
+                marginTop: "12px",
+                borderRadius: "10px",
+                border: "1px solid #fecaca",
+                backgroundColor: "#fef2f2",
+                padding: "8px 12px",
                 textAlign: "center",
                 fontSize: "12px",
-                color: "#6b7280",
-                margin: 0,
+                fontWeight: 600,
+                color: "#b91c1c",
               }}
             >
-              Facing issues?{" "}
-              <a
-                href="mailto:support@nammapros.com"
-                style={{
-                  fontWeight: 600,
-                  color: "#540e1e",
-                  textDecoration: "none",
-                }}
-              >
-                Contact Support.
-              </a>
-            </p>
-          </form>
-        </div>
+              {error}
+            </div>
+          )}
+
+          {/* Sign In Button */}
+          <button
+            type="submit"
+            disabled={busy || !identifier.trim() || !password}
+            style={{
+              marginTop: "20px",
+              width: "100%",
+              borderRadius: "10px",
+              backgroundColor: "#7b092a",
+              padding: "11px 16px",
+              fontSize: "13px",
+              fontWeight: 700,
+              color: "#ffffff",
+              border: "none",
+              cursor: busy || !identifier.trim() || !password ? "not-allowed" : "pointer",
+              opacity: busy || !identifier.trim() || !password ? 0.6 : 1,
+              boxShadow: "0 4px 14px rgba(123, 9, 42, 0.35)",
+              transition: "all 0.15s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            {busy ? <Loader2 size={16} className="animate-spin" /> : null}
+            <span>{busy ? "Signing in..." : "Sign In"}</span>
+          </button>
+
+          {/* Contact Support Footer */}
+          <p
+            style={{
+              paddingTop: "16px",
+              textAlign: "center",
+              fontSize: "12px",
+              color: "#6b7280",
+              margin: 0,
+            }}
+          >
+            Facing issues?{" "}
+            <a
+              href="mailto:support@nammapros.com"
+              style={{
+                fontWeight: 600,
+                color: "#7b092a",
+                textDecoration: "none",
+              }}
+            >
+              Contact Support.
+            </a>
+          </p>
+        </form>
       </div>
     </div>
   );
