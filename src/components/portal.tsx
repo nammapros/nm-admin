@@ -1253,6 +1253,7 @@ function HomepageBannersManager() {
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
   const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -1292,6 +1293,18 @@ function HomepageBannersManager() {
     }
   };
 
+  const uploadMobileBannerImage = async (file: File) => {
+    setUploadingMobile(true);
+    setErr("");
+    try {
+      setMobileImgUrl(await uploadFile(file));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not upload mobile image.");
+    } finally {
+      setUploadingMobile(false);
+    }
+  };
+
   const replaceBannerImage = async (bannerId: string, file: File) => {
     setUploadingBannerId(bannerId);
     setErr("");
@@ -1328,6 +1341,7 @@ function HomepageBannersManager() {
         await api("/admin/homepage-banners/", "POST", payload);
       }
       setEditingId(null);
+      setPlacement("SPOTLIGHT");
       setTitleVal("");
       setSubtitleVal("");
       setImgUrl("");
@@ -1347,18 +1361,18 @@ function HomepageBannersManager() {
     <div className="space-y-6">
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-base font-bold text-slate-900">Homepage Banners</h2>
-        <p className="text-xs text-slate-500 mb-4">In the spotlight banners appear in the homepage image row. Upload artwork, choose a destination, and set their display order.</p>
+        <p className="text-xs text-slate-500 mb-4">Edit the App download banner shown above “Best AC service,” or manage the other homepage banners here. Upload replacement artwork to update the website.</p>
         {err && <div className="mb-3 rounded-lg bg-red-50 p-3 text-xs text-red-800">{err}</div>}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[...banners].sort((a, b) => Number(b.placement === "SPOTLIGHT") - Number(a.placement === "SPOTLIGHT") || a.sort_order - b.sort_order).map((b) => (
+          {[...banners].sort((a, b) => Number(b.placement === "APP_DOWNLOAD") - Number(a.placement === "APP_DOWNLOAD") || Number(b.placement === "SPOTLIGHT") - Number(a.placement === "SPOTLIGHT") || a.sort_order - b.sort_order).map((b) => (
             <div key={b.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex flex-col justify-between gap-3">
               <div>
-                <span className="rounded bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-900">{b.placement}</span>
+                <span className="rounded bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-900">{b.placement === "APP_DOWNLOAD" ? "App download banner" : b.placement}</span>
                 <span className="ml-2 text-[10px] text-slate-500">Order {b.sort_order}</span>
                 <strong className="mt-2 block text-sm font-bold text-slate-900">{b.title}</strong>
-                {b.desktop_image_url && <img src={b.desktop_image_url} alt={b.title} className="mt-2 aspect-[788/442] w-full rounded-lg object-cover" />}
+                {b.desktop_image_url && <img src={b.desktop_image_url} alt={b.title} className={`mt-2 w-full rounded-lg object-cover ${b.placement === "APP_DOWNLOAD" ? "aspect-[1600/534]" : "aspect-[788/442]"}`} />}
                 {b.subtitle ? <p className="mt-1 text-xs text-slate-600">{b.subtitle}</p> : null}
-                {b.placement === "SPOTLIGHT" && <label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-teal-200 bg-white px-3 py-2 text-xs font-bold text-teal-800 hover:bg-teal-50">
+                {(b.placement === "SPOTLIGHT" || b.placement === "APP_DOWNLOAD") && <label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-teal-200 bg-white px-3 py-2 text-xs font-bold text-teal-800 hover:bg-teal-50">
                   {uploadingBannerId === b.id ? "Uploading..." : "Replace image"}
                   <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingBannerId !== null} className="sr-only"
                     onChange={(e) => { const file = e.target.files?.[0]; if (file) void replaceBannerImage(b.id, file); e.target.value = ""; }} />
@@ -1412,6 +1426,7 @@ function HomepageBannersManager() {
           <input value={titleVal} onChange={(e) => setTitleVal(e.target.value)} placeholder="Banner Title *" className="w-full rounded-lg border border-slate-300 p-2 text-sm" />
           <input value={subtitleVal} onChange={(e) => setSubtitleVal(e.target.value)} placeholder="Subtitle" className="w-full rounded-lg border border-slate-300 p-2 text-sm" />
           <select value={placement} onChange={(e) => setPlacement(e.target.value)} className="w-full rounded-lg border border-slate-300 p-2 text-sm">
+            <option value="APP_DOWNLOAD" disabled={banners.some((b) => b.placement === "APP_DOWNLOAD" && b.id !== editingId)}>App download banner</option>
             <option value="SPOTLIGHT">In the spotlight</option>
             <option value="HERO">Hero</option>
             <option value="MAIN">Main</option>
@@ -1420,31 +1435,35 @@ function HomepageBannersManager() {
             <option value="PROMO">Promo</option>
           </select>
           <div className="rounded-xl border border-dashed border-teal-300 bg-teal-50/40 p-4">
-            <p className="text-sm font-bold text-slate-900">{placement === "SPOTLIGHT" ? "Spotlight image" : "Banner image"}</p>
-            <p className="mt-1 text-xs text-slate-600">Choose a JPG, PNG, or WebP file up to 5 MB. The recommended shape is 788 × 442 px.</p>
+            <p className="text-sm font-bold text-slate-900">{placement === "SPOTLIGHT" ? "Spotlight image" : placement === "APP_DOWNLOAD" ? "App download banner image" : "Banner image"}</p>
+            <p className="mt-1 text-xs text-slate-600">Choose a JPG, PNG, or WebP file up to 5 MB. Recommended shape: {placement === "APP_DOWNLOAD" ? "1600 × 534 px" : "788 × 442 px"}.</p>
             <label className="mt-3 inline-flex cursor-pointer items-center rounded-lg bg-teal-700 px-4 py-2 text-xs font-bold text-white hover:bg-teal-800">
               {uploading ? "Uploading..." : imgUrl ? "Choose a different image" : "Choose image to upload"}
               <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadBannerImage(file); e.target.value = ""; }} className="sr-only" />
             </label>
-            {imgUrl && <img src={imgUrl} alt="Banner preview" className="mt-3 aspect-[788/442] w-full rounded-lg object-cover" />}
+            {imgUrl && <img src={imgUrl} alt="Banner preview" className={`mt-3 w-full rounded-lg object-cover ${placement === "APP_DOWNLOAD" ? "aspect-[1600/534]" : "aspect-[788/442]"}`} />}
           </div>
           {uploading && <p className="text-xs text-teal-700">Uploading image...</p>}
           {placement !== "SPOTLIGHT" && <>
             <input value={imgUrl} onChange={(e) => setImgUrl(e.target.value)} placeholder="Desktop Image URL (optional alternative)" className="w-full rounded-lg border border-slate-300 p-2 text-xs font-mono" />
+            {placement === "APP_DOWNLOAD" && <label className="inline-flex cursor-pointer items-center rounded-lg border border-teal-200 bg-white px-4 py-2 text-xs font-bold text-teal-800 hover:bg-teal-50">
+              {uploadingMobile ? "Uploading mobile image..." : mobileImgUrl ? "Replace mobile image" : "Upload mobile image (optional)"}
+              <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingMobile} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadMobileBannerImage(file); e.target.value = ""; }} className="sr-only" />
+            </label>}
             <input value={mobileImgUrl} onChange={(e) => setMobileImgUrl(e.target.value)} placeholder="Mobile image URL (optional)" className="w-full rounded-lg border border-slate-300 p-2 text-xs font-mono" />
           </>}
-          <input value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)} placeholder="Target link (e.g. /services/ac-service)" className="w-full rounded-lg border border-slate-300 p-2 text-xs font-mono" />
+          <input value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)} placeholder={placement === "APP_DOWNLOAD" ? "Optional click link (HTTPS or /path)" : "Target link (e.g. /services/ac-service)"} className="w-full rounded-lg border border-slate-300 p-2 text-xs font-mono" />
           {placement === "SPOTLIGHT" && <p className="text-xs text-slate-500">Destination examples: <code>category:ac</code>, <code>service:bathroom-cleaning</code>, <code>popup:handyman</code>, or a site path such as <code>/services</code>.</p>}
           <label className="block text-xs font-semibold text-slate-700">Display order
             <input type="number" min={0} max={65535} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm" />
           </label>
           <label className="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} /> Visible on website</label>
           <div className="flex gap-2">
-            <button disabled={busy || uploading || !titleVal.trim() || (placement === "SPOTLIGHT" && (!imgUrl.trim() || !targetUrl.trim()))} onClick={() => void save()} className="rounded-lg bg-teal-700 px-5 py-2 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-50">
+            <button disabled={busy || uploading || uploadingMobile || !titleVal.trim() || (placement === "SPOTLIGHT" && (!imgUrl.trim() || !targetUrl.trim())) || (placement === "APP_DOWNLOAD" && !imgUrl.trim())} onClick={() => void save()} className="rounded-lg bg-teal-700 px-5 py-2 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-50">
               {editingId ? "Update Banner" : "Create Banner"}
             </button>
             {editingId && (
-              <button onClick={() => { setEditingId(null); setTitleVal(""); setSubtitleVal(""); setImgUrl(""); setMobileImgUrl(""); setTargetUrl(""); setSortOrder(0); setIsActive(true); }} className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700">
+              <button onClick={() => { setEditingId(null); setTitleVal(""); setSubtitleVal(""); setImgUrl(""); setMobileImgUrl(""); setTargetUrl(""); setSortOrder(0); setIsActive(true); setPlacement("SPOTLIGHT"); }} className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700">
                 Cancel
               </button>
             )}
