@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { api, base, uploadCategoryImage, uploadImage } from "../lib/api";
 import { ServiceBrandsEditor } from "./service-brands-editor";
+import { ServiceAdvanceEditor } from "./service-advance-editor";
 import { AdminErrorState } from "./admin/admin-error-state";
 import { ServicePricingEditor } from "./service-pricing-editor";
 
@@ -1647,6 +1648,8 @@ export function AdminServicesScreen({
                         />
                       </div>
                     </div>
+
+                    <ServiceAdvanceEditor key={selectedService.id} serviceId={selectedService.id} canEdit={canEditPricing} />
 
                     {/* Status Toggle & Sort Order */}
                     <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-[#efede8]">
