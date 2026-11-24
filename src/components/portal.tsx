@@ -681,6 +681,7 @@ export default function Portal() {
           {isServicesSection && (
             <AdminServicesScreen
               canEdit={can("MANAGE_SERVICES")}
+              canEditPricing={can("MANAGE_PRICING")}
               routeCategorySlug={routeCategorySlug}
               routeServiceSlug={routeServiceSlug}
               onNavigate={(nextPath) => router.push(nextPath)}

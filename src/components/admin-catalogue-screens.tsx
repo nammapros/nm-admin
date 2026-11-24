@@ -42,6 +42,7 @@ import {
 import { api, base, uploadCategoryImage, uploadImage } from "../lib/api";
 import { ServiceBrandsEditor } from "./service-brands-editor";
 import { AdminErrorState } from "./admin/admin-error-state";
+import { ServicePricingEditor } from "./service-pricing-editor";
 
 export type AdminCategory = {
   id: string;
@@ -752,11 +753,13 @@ function PillListEditor({
 
 export function AdminServicesScreen({
   canEdit,
+  canEditPricing,
   routeCategorySlug,
   routeServiceSlug,
   onNavigate,
 }: {
   canEdit: boolean;
+  canEditPricing: boolean;
   routeCategorySlug?: string;
   routeServiceSlug?: string;
   onNavigate?: (path: string) => void;
@@ -1376,6 +1379,7 @@ export function AdminServicesScreen({
         {/* SCREEN 3: ENHANCED SERVICE EDITOR                                 */}
         {/* ================================================================= */}
         {selectedService && svcForm ? (
+          <>
           <form id="subservice-edit-form" onSubmit={handleSaveSubService} className="space-y-5">
             {/* Sticky Action Header */}
             <div className="sticky top-0 z-20 -mx-4 -mt-4 bg-[#f7f6f2]/95 backdrop-blur-md px-4 py-4 sm:-mx-6 sm:-mt-6 sm:px-6 border-b border-slate-200/80 shadow-2xs">
@@ -1608,7 +1612,7 @@ export function AdminServicesScreen({
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1 block text-xs font-bold text-slate-700">
-                          Starting price (₹) *
+                          Catalogue starting price (₹)
                         </label>
                         <div className="relative">
                           <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">
@@ -1626,7 +1630,7 @@ export function AdminServicesScreen({
                           />
                         </div>
                         <p className="mt-1 text-[11px] text-slate-500">
-                          Shown as &quot;Starts from ₹...&quot; on customer cards.
+                          Fallback price for catalogues. Edit bookable selling and crossed out prices below.
                         </p>
                       </div>
                       <div>
@@ -2007,6 +2011,14 @@ export function AdminServicesScreen({
             </div>
 
           </form>
+          {activeEditorTab === "general" && (
+            <ServicePricingEditor
+              serviceId={selectedService.id}
+              canEdit={canEditPricing}
+              onSaved={() => void loadAll()}
+            />
+          )}
+          </>
         ) : selectedCategory ? (
           /* ================================================================= */
           /* SCREEN 2: CATEGORY SERVICES LIST (Image 3 exact layout)           */
@@ -2841,5 +2853,5 @@ export function AdminServicesScreen({
 }
 
 export function AdminCategoriesScreen(props: { canEdit: boolean }) {
-  return <AdminServicesScreen canEdit={props.canEdit} />;
+  return <AdminServicesScreen canEdit={props.canEdit} canEditPricing={false} />;
 }
