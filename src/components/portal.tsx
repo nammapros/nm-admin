@@ -44,7 +44,7 @@ import { ChangePasswordDialog, RolePermissions, StaffManager } from "./staff-man
 import { AdminLoginPage } from "./admin-login-page";
 
 type Me = { id: number; phone_e164: string; roles: string[]; capabilities: string[] };
-type Field = { key: string; label?: string; type?: "number" | "date" | "datetime-local" | "checkbox" | "json" | "textarea"; required?: boolean };
+type Field = { key: string; label?: string; type?: "number" | "date" | "datetime-local" | "checkbox" | "json" | "textarea" | "image"; required?: boolean };
 type View = { title: string; endpoint: string; fields?: Field[]; permission?: string; detail?: boolean };
 
 const views: Record<string, View> = {
@@ -137,7 +137,7 @@ const views: Record<string, View> = {
       { key: "slug", required: true },
       { key: "excerpt", type: "textarea" },
       { key: "content", type: "textarea", required: true },
-      { key: "cover_image_url", label: "Cover image URL" },
+      { key: "cover_image_url", label: "Cover image", type: "image" },
       { key: "author_name" },
       { key: "meta_title" },
       { key: "meta_description", type: "textarea" },
@@ -238,6 +238,28 @@ export default function Portal() {
   const [selectedBooking, setSelectedBooking] = useState<Row | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [pendingKycCount, setPendingKycCount] = useState(0);
+  const [uploadingBlogImage, setUploadingBlogImage] = useState(false);
+  const [blogImageError, setBlogImageError] = useState("");
+  useEffect(() => { if (!showForm) setBlogImageError(""); }, [showForm]);
+
+  const uploadBlogImage = async (file: File) => {
+    setBlogImageError("");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size === 0 || file.size > 5 * 1024 * 1024) {
+      setBlogImageError("Choose a JPG, PNG, or WebP image under 5 MB.");
+      return;
+    }
+    setUploadingBlogImage(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const uploaded = await uploadMultipart<{ url: string }>("/admin/blog-posts/images/", body);
+      setForm((current) => ({ ...current, cover_image_url: uploaded.url }));
+    } catch (cause) {
+      setBlogImageError(cause instanceof Error ? cause.message : "Image upload failed.");
+    } finally {
+      setUploadingBlogImage(false);
+    }
+  };
 
   useEffect(() => {
     if (!me) return;
@@ -402,7 +424,7 @@ export default function Portal() {
   const metrics = path === "/dashboard" ? (metricSource.metrics as Record<string, unknown> | undefined) : undefined;
 
   const onFormSubmit = () => {
-    if (!config?.fields) return;
+    if (!config?.fields || uploadingBlogImage) return;
     const body: Record<string, unknown> = {};
     try {
       for (const field of config.fields) {
@@ -858,11 +880,24 @@ export default function Portal() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {config.fields.map((field) => (
-                    <div key={field.key} className={["json", "textarea"].includes(field.type ?? "") ? "sm:col-span-2" : ""}>
+                    <div key={field.key} className={["json", "textarea", "image"].includes(field.type ?? "") ? "sm:col-span-2" : ""}>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
                         {field.label ?? title(field.key)}
                       </label>
-                      {field.type === "checkbox" ? (
+                      {field.type === "image" ? (
+                        <div className="space-y-3">
+                          <label className="inline-flex cursor-pointer items-center rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100">
+                            {uploadingBlogImage ? "Uploading image…" : form.cover_image_url ? "Replace cover image" : "Upload cover image"}
+                            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingBlogImage}
+                              onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadBlogImage(file); event.target.value = ""; }}
+                              className="sr-only" />
+                          </label>
+                          <p className="text-xs text-slate-500">JPG, PNG, or WebP, up to 5 MB.</p>
+                          {blogImageError && <p role="alert" className="text-xs text-red-700">{blogImageError}</p>}
+                          {typeof form.cover_image_url === "string" && form.cover_image_url &&
+                            <img src={form.cover_image_url} alt="Blog cover preview" className="h-40 w-full rounded-lg border border-slate-200 object-cover" />}
+                        </div>
+                      ) : field.type === "checkbox" ? (
                         <input
                           type="checkbox"
                           checked={Boolean(form[field.key])}
@@ -899,7 +934,7 @@ export default function Portal() {
                   <button onClick={() => setShowForm(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
                     Cancel
                   </button>
-                  <button onClick={onFormSubmit} disabled={busy} className="rounded-lg bg-teal-700 px-5 py-2 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-50">
+                  <button onClick={onFormSubmit} disabled={busy || uploadingBlogImage} className="rounded-lg bg-teal-700 px-5 py-2 text-xs font-bold text-white hover:bg-teal-800 disabled:opacity-50">
                     Save Record
                   </button>
                 </div>
