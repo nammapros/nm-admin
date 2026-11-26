@@ -1,0 +1,111 @@
+html[data-admin-theme=dark] .admin-workspace {
+  --background: #0d1524;
+  --surface: #172235;
+  --soft-surface: #1d2b40;
+  --foreground: #e8eef7;
+  --secondary: #aabbd0;
+  --muted-foreground: #91a5bd;
+  --muted: #1d2b40;
+  --border: #34445b;
+  color: var(--foreground);
+  background: var(--background);
+  color-scheme: dark;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(
+  .bg-white, [class~="bg-white/90"], [class~="bg-white/95"],
+  [class~="bg-[#faf9f6]"], [class~="bg-[#f7f6f2]"]
+) {
+  background-color: #172235;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(
+  .bg-slate-50, .bg-slate-100, .bg-slate-200, .bg-gray-50,
+  [class~="bg-[#f3f4f6]"], [class~="bg-[#eeeeea]"],
+  [class~="bg-[#edf6f5]"], [class~="bg-[#eef3f6]"],
+  [class~="bg-[#e3ecf2]"], [class~="bg-[#e3edf3]"],
+  [class~="bg-[#dfe9ef]"]
+) {
+  background-color: #1d2b40;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(
+  .text-slate-900, .text-slate-950, .text-gray-900,
+  [class~="text-[#111827]"]
+) {
+  color: #e8eef7;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-slate-700, .text-slate-800, .text-gray-700) {
+  color: #cad6e5;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-slate-400, .text-slate-500, .text-slate-600, .text-gray-500, .text-gray-600) {
+  color: #a4b5ca;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-teal-600, .text-teal-700, .text-teal-800, .text-teal-900, [class~="text-[#2c5270]"], [class~="text-[#0f766e]"]) {
+  color: #7dd9d0;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-red-600, .text-red-700, .text-red-800, .text-red-900, .text-rose-600, .text-rose-700, .text-rose-900) {
+  color: #fda4af;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(
+  .border-slate-100, .border-slate-200, .border-slate-300,
+  .border-gray-200, .border-gray-300,
+  [class~="border-[#efede8]"], [class~="border-[#e7e5df]"]
+) {
+  border-color: #34445b;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(input:not([type="checkbox"]), select, textarea) {
+  background-color: #101c2e;
+  border-color: #42536b;
+  color: #e8eef7;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(input, textarea)::placeholder {
+  color: #91a5bd;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.bg-rose-50, .bg-red-50, .bg-red-100) {
+  background-color: #442332;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.bg-emerald-50, .bg-emerald-100, .bg-green-50, .bg-teal-50, .bg-teal-100) {
+  background-color: #143c3d;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.bg-amber-50, .bg-amber-100, .bg-yellow-50) {
+  background-color: #44351c;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.bg-blue-100, .bg-cyan-100, .bg-sky-50, .bg-sky-100, .bg-indigo-100, .bg-violet-50) {
+  background-color: #233651;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900) {
+  color: #86efac;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) {
+  color: #fcd34d;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(.text-blue-800, .text-blue-900, .text-cyan-900, .text-sky-600, .text-sky-900, .text-indigo-900) {
+  color: #93c5fd;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(a, button):hover:is(.bg-white, .bg-slate-50, .bg-slate-100) {
+  background-color: #26364d;
+}
+
+html[data-admin-theme=dark] .admin-workspace :is(table, .table-wrap) {
+  color: #e8eef7;
+}
+
+html[data-admin-theme=dark] .admin-workspace hr {
+  border-color: #34445b;
+}

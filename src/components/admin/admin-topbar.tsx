@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ChevronDown, KeyRound, LogOut, Menu, Search, X } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Menu, Moon, Search, Sun, X } from "lucide-react";
 import { api } from "../../lib/api";
 import { AdminBrand } from "./admin-brand";
 import { adminNavigationSections } from "./admin-sidebar";
@@ -20,6 +20,8 @@ export function AdminTopbar({
   search,
   onSearchChange,
   onSignOut,
+  theme,
+  onToggleTheme,
   onChangePassword,
 }: {
   pathname: string;
@@ -28,6 +30,8 @@ export function AdminTopbar({
   search: string;
   onSearchChange: (value: string) => void;
   onSignOut: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
   onChangePassword: () => void;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -143,6 +147,16 @@ export function AdminTopbar({
               </div>
             ) : null}
           </div>
+
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+            className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
 
           {/* User profile dropdown */}
           <div className="relative ml-auto">

@@ -200,6 +200,20 @@ const pickRows = (data: unknown): { rows: Row[]; count: number } => {
 };
 
 export default function Portal() {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => {
+    let saved: string | null = null;
+    try { saved = window.localStorage.getItem("nammapros.admin.theme"); } catch { /* Browser storage may be disabled. */ }
+    const resolved = saved === "dark" || (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    document.documentElement.dataset.adminTheme = resolved;
+    setTheme(resolved);
+  }, []);
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    try { window.localStorage.setItem("nammapros.admin.theme", next); } catch { /* Keep the selected theme for this tab. */ }
+    document.documentElement.dataset.adminTheme = next;
+    setTheme(next);
+  };
   const path = usePathname();
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
@@ -503,7 +517,7 @@ export default function Portal() {
   }
 
   return (
-    <div className="flex min-h-screen min-w-0 bg-slate-100 font-sans text-slate-900">
+    <div className="admin-shell flex min-h-screen min-w-0 bg-slate-100 font-sans text-slate-900">
       {/* PurpleSquad Admin Sidebar */}
       <AdminSidebar
         pathname={path}
@@ -514,7 +528,7 @@ export default function Portal() {
       />
 
       {/* Main Content Area */}
-      <div className="min-w-0 max-w-full flex-1 lg:ml-72 flex flex-col">
+      <div className="admin-workspace min-w-0 max-w-full flex-1 lg:ml-72 flex flex-col">
         {/* ps_coreF1 Topbar */}
         <AdminTopbar
           pathname={path}
@@ -526,6 +540,8 @@ export default function Portal() {
             setPage(1);
           }}
           onSignOut={handleSignOut}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onChangePassword={() => setShowPasswordDialog(true)}
         />
 
