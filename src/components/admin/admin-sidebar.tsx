@@ -8,6 +8,7 @@ import {
   CreditCard,
   FileBarChart,
   FileClock,
+  FileText,
   Image,
   LayoutDashboard,
   ListChecks,
@@ -76,6 +77,7 @@ export const adminNavigationSections: NavSection[] = [
     items: [
       { label: "Homepage Banners", href: "/website/banners", icon: Image },
       { label: "Carousel", href: "/website/carousel", icon: Image },
+      { label: "Blog Posts", href: "/website/blog", icon: FileText },
     ],
   },
   {

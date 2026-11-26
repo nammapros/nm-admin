@@ -30,7 +30,7 @@ type PriceDraft = {
   original: string;
   duration: string;
   activate: boolean;
-  zones: Record<string, string>;
+  common: string;
 };
 
 const rupees = (paise: number | null) => paise == null ? "" : String(paise / 100);
@@ -53,7 +53,7 @@ function makeDrafts(data: PriceSettings): Record<string, PriceDraft> {
     original: rupees(pkg.original_price_paise),
     duration: String(pkg.duration_minutes || 60),
     activate: pkg.is_active,
-    zones: Object.fromEntries(pkg.zones.map((zone) => [zone.zone_id, rupees(zone.price_paise)])),
+    common: rupees(pkg.zones.find((zone) => zone.price_paise != null)?.price_paise ?? null),
   }]));
 }
 
@@ -110,33 +110,13 @@ export function ServicePricingEditor({
       setError("Enter a valid original price or leave it blank to remove the crossed out price.");
       return;
     }
-    const zonePrices: Array<{ zone_id: string; price_paise: number; expected_rule_id: string | null }> = [];
-    const allPrices: number[] = [];
-    for (const zone of pkg.zones) {
-      const value = draft.zones[zone.zone_id]?.trim() ?? "";
-      if (!value) {
-        if (zone.price_paise != null) {
-          setError(`Enter the selling price for ${zone.zone_name}, or leave its saved price unchanged.`);
-          return;
-        }
-        continue;
-      }
-      const paise = money(value);
-      if (paise == null || paise <= 0) {
-        setError(`Enter a valid selling price for ${zone.zone_name}.`);
-        return;
-      }
-      allPrices.push(paise);
-      if (paise !== zone.price_paise) {
-        zonePrices.push({ zone_id: zone.zone_id, price_paise: paise, expected_rule_id: zone.rule_id });
-      }
-    }
-    if (pkg.id === "new" && zonePrices.length === 0) {
-      setError("Enter a selling price for at least one service area.");
+    const commonPrice = money(draft.common);
+    if (commonPrice == null || commonPrice <= 0) {
+      setError("Enter a valid selling price for all service areas.");
       return;
     }
-    if (original != null && allPrices.length && original <= Math.max(...allPrices)) {
-      setError("Original price must be higher than every selling price for this package.");
+    if (original != null && original <= commonPrice) {
+      setError("Original price must be higher than the selling price.");
       return;
     }
     const duration = Number(draft.duration);
@@ -150,7 +130,7 @@ export function ServicePricingEditor({
         package_id: pkg.id === "new" ? null : pkg.id,
         duration_minutes: pkg.id === "new" ? duration : undefined,
         original_price_paise: original,
-        zone_prices: zonePrices,
+        common_price_paise: commonPrice,
         activate_package: draft.activate,
       });
       setData(result);
@@ -180,7 +160,7 @@ export function ServicePricingEditor({
     <section className="space-y-4 rounded-2xl border border-[#e7e5df] bg-white p-6 shadow-xs" aria-labelledby="service-pricing-heading">
       <div>
         <h3 id="service-pricing-heading" className="text-sm font-bold text-slate-900">Customer price and crossed out price</h3>
-        <p className="mt-1 text-xs text-slate-500">Set the selling price for each area and an optional higher original price. Customers see, for example, ₹650 with ₹800 crossed out. Saving a new area price also enables coverage there.</p>
+        <p className="mt-1 text-xs text-slate-500">Set one selling price for all service areas and an optional higher original price.</p>
       </div>
       {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-xs text-rose-700">{error}</p>}
       {notice && <p role="status" className="rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800">{notice}</p>}
@@ -203,20 +183,12 @@ export function ServicePricingEditor({
                   onChange={(event) => changeDraft(pkg.id, { duration: event.target.value })} className={inputClass} />
               </label>}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {pkg.zones.map((zone) => (
-                <label key={zone.zone_id} className="text-xs font-semibold text-slate-700">
-                  Selling price in {zone.zone_name} ({zone.postal_code}) (₹)
-                  <input type="number" min="0.01" step="0.01" value={draft.zones[zone.zone_id] ?? ""}
-                    disabled={!canEdit || savingId !== null}
-                    onChange={(event) => changeDraft(pkg.id, {
-                      zones: { ...draft.zones, [zone.zone_id]: event.target.value },
-                    })}
-                    placeholder={zone.price_paise == null ? "Not priced" : "650"}
-                    className={inputClass} />
-                </label>
-              ))}
-            </div>
+            <label className="block text-xs font-semibold text-slate-700">Selling price for all service areas (₹)
+              <input type="number" min="0.01" step="0.01" value={draft.common}
+                disabled={!canEdit || savingId !== null}
+                onChange={(event) => changeDraft(pkg.id, { common: event.target.value })}
+                placeholder="650" className={inputClass} />
+            </label>
             {!pkg.is_active && pkg.id !== "new" && <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
               <input type="checkbox" checked={draft.activate} disabled={!canEdit || savingId !== null}
                 onChange={(event) => changeDraft(pkg.id, { activate: event.target.checked })} />

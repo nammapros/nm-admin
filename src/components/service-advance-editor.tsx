@@ -8,8 +8,10 @@ type AdvanceType = "NONE" | "FIXED" | "PERCENTAGE";
 
 type PriceRule = {
   id: string;
+  service_id: string;
+  package_id: string;
+  minimum_price_paise?: number;
   package_name: string;
-  zone_name: string;
   base_paise: number;
   inspection_paise: number;
   fee_paise: number;
@@ -43,7 +45,7 @@ function PricePaymentRow({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const total = rule.base_paise + rule.inspection_paise + rule.fee_paise + rule.tax_paise;
+  const total = rule.minimum_price_paise ?? (rule.base_paise + rule.inspection_paise + rule.fee_paise + rule.tax_paise);
   const unchanged =
     policy === rule.payment_policy &&
     (policy !== "ADVANCE" ||
@@ -68,7 +70,8 @@ function PricePaymentRow({
     }
     setSaving(true);
     try {
-      await api(`/admin/pricing/${rule.id}/`, "PATCH", {
+      await api(`/admin/services/${rule.service_id}/price-settings/`, "PATCH", {
+        apply_payment_to_service: true,
         payment_policy: policy,
         advance_type: policy === "ADVANCE" ? advanceType : "NONE",
         advance_amount_paise: policy === "ADVANCE" && advanceType === "FIXED" ? Math.round(amount * 100) : 0,
@@ -86,10 +89,10 @@ function PricePaymentRow({
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-bold text-slate-900">{rule.package_name}</p>
-          <p className="text-xs text-slate-500">{rule.zone_name}</p>
+          <p className="text-sm font-bold text-slate-900">All service options</p>
+          <p className="text-xs text-slate-500">Applies to every package and service area</p>
         </div>
-        <span className="text-sm font-bold text-slate-800">Booking price {rupees(total)}</span>
+        <span className="text-sm font-bold text-slate-800">Lowest booking price {rupees(total)}</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
         <label className="text-xs font-semibold text-slate-700">
@@ -180,7 +183,8 @@ export function ServiceAdvanceEditor({
         if (result.results.length === 0) break;
         page += 1;
       } while (all.length < count);
-      setRules(all);
+      setRules(all.length ? [{ ...all[0], service_id: serviceId,
+        minimum_price_paise: Math.min(...all.map((rule) => rule.base_paise + rule.inspection_paise + rule.fee_paise + rule.tax_paise)) }] : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load booking payments.");
     } finally {
@@ -196,7 +200,7 @@ export function ServiceAdvanceEditor({
     <section className="rounded-2xl border border-[#e7e5df] bg-[#faf9f6] p-5">
       <h3 className="text-sm font-bold text-slate-900">Advance payment for bookings</h3>
       <p className="mt-1 text-xs text-slate-600">
-        Set what customers pay when booking each service option and area. The remaining balance is due at the visit.
+        Set one advance for every option and service area. The technician collects the remaining balance at the visit.
       </p>
       {loading ? (
         <p className="mt-4 text-xs text-slate-500">Loading payment settings…</p>

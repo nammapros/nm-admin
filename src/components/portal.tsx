@@ -44,7 +44,7 @@ import { ChangePasswordDialog, RolePermissions, StaffManager } from "./staff-man
 import { AdminLoginPage } from "./admin-login-page";
 
 type Me = { id: number; phone_e164: string; roles: string[]; capabilities: string[] };
-type Field = { key: string; label?: string; type?: "number" | "date" | "datetime-local" | "checkbox" | "json"; required?: boolean };
+type Field = { key: string; label?: string; type?: "number" | "date" | "datetime-local" | "checkbox" | "json" | "textarea"; required?: boolean };
 type View = { title: string; endpoint: string; fields?: Field[]; permission?: string; detail?: boolean };
 
 const views: Record<string, View> = {
@@ -125,14 +125,23 @@ const views: Record<string, View> = {
     title: "Service Areas (Zones)",
     endpoint: "/admin/zones/",
     fields: [
-      { key: "city_id" },
-      { key: "city_name" },
-      { key: "name", required: true },
-      { key: "postal_code", required: true },
-      { key: "state" },
-      { key: "operational_capacity", type: "number" },
-      { key: "working_hours", type: "json" },
-      { key: "is_active", type: "checkbox" },
+      { key: "name", label: "Area name", required: true },
+      { key: "postal_code", label: "PIN code", required: true },
+    ],
+  },
+  "/website/blog": {
+    title: "Blog Posts",
+    endpoint: "/admin/blog-posts/",
+    fields: [
+      { key: "title", required: true },
+      { key: "slug", required: true },
+      { key: "excerpt", type: "textarea" },
+      { key: "content", type: "textarea", required: true },
+      { key: "cover_image_url", label: "Cover image URL" },
+      { key: "author_name" },
+      { key: "meta_title" },
+      { key: "meta_description", type: "textarea" },
+      { key: "is_published", label: "Publish", type: "checkbox" },
     ],
   },
   "/finance/payments": { title: "Captured Payments", endpoint: "/admin/finance/payments/", permission: "VIEW_FINANCE" },
@@ -409,6 +418,7 @@ export default function Portal() {
     "package_id", "zone_id", "technician_id", "payment_id", "settlement_id",
     "adjustment_id", "earning_id", "lead_id", "ticket_id", "assigned_to",
     "assigned_to_id", "actor_id", "images", "entries", "summary", "requirements", "working_hours",
+    "content", "excerpt", "meta_description", "cover_image_url",
   ]);
   const preferredOrder = [
     "work_order_number", "booking_number", "reference", "customer_code",
@@ -749,7 +759,7 @@ export default function Portal() {
                   columns={dataColumns}
                   rows={list.rows}
                   getRowKey={(r) => String(r.id ?? Math.random())}
-                  onRowClick={["/bookings", "/work-orders"].includes(path) ? (r) => setSelectedBooking(r) : undefined}
+                  onRowClick={["/bookings", "/work-orders"].includes(path) ? (r) => setSelectedBooking(r) : path === "/website/blog" ? (r) => { setEditing(r); setForm(r); setShowForm(true); } : undefined}
                   emptyIcon={ClipboardList}
                   emptyTitle="No records found"
                   emptyMessage="There are no records matching your current filter criteria."
@@ -832,7 +842,7 @@ export default function Portal() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {config.fields.map((field) => (
-                    <div key={field.key} className={field.type === "json" ? "sm:col-span-2" : ""}>
+                    <div key={field.key} className={["json", "textarea"].includes(field.type ?? "") ? "sm:col-span-2" : ""}>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
                         {field.label ?? title(field.key)}
                       </label>
@@ -843,6 +853,11 @@ export default function Portal() {
                           onChange={(e) => setForm({ ...form, [field.key]: e.target.checked })}
                           className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                         />
+                      ) : field.type === "textarea" ? (
+                        <textarea rows={field.key === "content" ? 12 : 3} required={field.required}
+                          value={String(form[field.key] ?? "")}
+                          onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                          className="w-full rounded-lg border border-slate-300 p-2 text-sm outline-none focus:border-teal-700" />
                       ) : field.type === "json" ? (
                         <textarea
                           rows={3}
